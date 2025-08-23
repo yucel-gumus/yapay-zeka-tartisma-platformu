@@ -8,8 +8,7 @@ export async function POST(request: NextRequest) {
     console.log('Chat history length:', chatHistory?.length);
 
     if (!chatHistory || !topic) {
-      console.log('Missing parameters - chatHistory:', !!chatHistory, 'topic:', !!topic);
-      return new Response('Missing required parameters', { status: 400 });
+      return new Response('Gerekli parametreler eksik', { status: 400 });
     }
 
     const model = getModel(judgeModel);
@@ -24,11 +23,7 @@ export async function POST(request: NextRequest) {
       )
       .join('\n\n---\n\n');
 
-    console.log('Expert opinions length:', expertOpinions.length);
-    console.log('Expert opinions:', expertOpinions.substring(0, 200) + '...');
-
     if (!expertOpinions.trim()) {
-      console.log('No expert opinions found!');
       return Response.json({ verdict: 'Henüz uzman görüşü bulunmadığı için karar verilemedi.' });
     }
 
@@ -48,8 +43,6 @@ Kısa ve net cevap ver. Maksimum 3-4 cümle. Formatın şöyle olsun:
     const response = await result.response;
     const verdict = response.text();
     
-    console.log('Generated verdict:', verdict);
-
     return Response.json({ verdict });
 
   } catch (error) {

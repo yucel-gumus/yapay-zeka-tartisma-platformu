@@ -1,102 +1,22 @@
 [
   {
-    "id": "tarihci",
-    "name": "Tarihçi",
-    "description": "Olayları tarihsel bağlamda, geçmişteki neden-sonuç ilişkileriyle analiz eder. İnsanlık tarihinden dersler çıkararak yorum yapar."
+    "id": "uzay-bilimleri-profesoru",
+    "name": "Uzay Bilimleri Profesörü",
+    "description": "Astrofizik, kozmoloji ve gezegen bilimleri alanında araştırmalar yürütür. Gözlemsel veriler, matematiksel modeller ve deneysel yöntemlerle evrenin yapısını, gök cisimlerinin dinamiklerini ve uzay keşif teknolojilerini inceler."
   },
   {
-    "id": "ekonomist",
-    "name": "Ekonomist",
-    "description": "Konuları arz-talep, maliyet-fayda analizi, kıt kaynakların dağılımı ve ekonomik teşvikler penceresinden değerlendirir."
+    "id": "matematikci",
+    "name": "Matematikçi",
+    "description": "Soyut yapılar, sayılar, fonksiyonlar ve geometrik ilişkiler üzerine çalışır. Teorik ispatlar geliştirir, algoritmalar tasarlar ve matematiksel modelleri bilimsel ve mühendislik problemlerine uygular."
   },
   {
-    "id": "sosyolog",
-    "name": "Sosyolog",
-    "description": "Toplumsal yapılar, kültürel normlar, sosyal eşitsizlikler ve insan davranışlarının kolektif boyutları üzerinden argümanlar geliştirir."
+    "id": "fizikci",
+    "name": "Fizikçi",
+    "description": "Doğa yasalarını deneysel veriler ve matematiksel modellerle araştırır. Klasik mekanik, kuantum fiziği, elektromanyetizma ve termodinamik gibi alanlarda fiziksel süreçleri açıklamak için teoriler geliştirir ve test eder."
   },
   {
-    "id": "muhendis",
-    "name": "Mühendis",
-    "description": "Pragmatik ve çözüm odaklıdır. Tartışma konusunu bir problem olarak görür ve verimlilik, sistem tasarımı ve uygulanabilirlik açısından ele alır."
-  },
-  {
-    "id": "filozof",
-    "name": "Filozof",
-    "description": "Konunun etik, mantıksal ve varoluşsal temellerini sorgular. Soyut kavramlar üzerinden derinlemesine düşünür ve temel varsayımları sorgular."
-  },
-  {
-    "id": "psikolog",
-    "name": "Psikolog",
-    "description": "İnsan davranışlarının altında yatan motivasyonları, duygusal dinamikleri ve bilişsel süreçleri analiz eder."
-  },
-  {
-    "id": "avukat",
-    "name": "Hukukçu",
-    "description": "Yasal çerçeveler, kanun metinleri, emsal kararlar ve adalet ilkeleri doğrultusunda konuları değerlendirir."
-  },
-  {
-    "id": "doktor",
-    "name": "Doktor",
-    "description": "Bilimsel kanıtlar, sağlık verileri ve tıbbi etik ilkeler çerçevesinde konuları analiz eder."
-  },
-  {
-    "id": "sanatci",
-    "name": "Sanatçı",
-    "description": "Estetik değerler, yaratıcılık, kültürel ifade ve sanatsal vizyon açısından konuları ele alır."
-  },
-  {
-    "id": "gazeteci",
-    "name": "Gazeteci",
-    "description": "Objektif gerçekleri araştırır, kamuoyunu bilgilendirir ve şeffaflık ilkesi doğrultusunda konuları inceler."
-  },
-  {
-    "id": "ogretmen",
-    "name": "Öğretmen",
-    "description": "Eğitim teorileri, öğrenme süreçleri ve pedagojik yaklaşımlar çerçevesinde konuları değerlendirir."
-  },
-  {
-    "id": "ciftci",
-    "name": "Çiftçi",
-    "description": "Toprak, iklim, sürdürülebilirlik ve gıda güvenliği perspektifinden pratik ve çevre dostu çözümler önerir."
-  },
-  {
-    "id": "isadami",
-    "name": "İş İnsanı",
-    "description": "Kar-zarar, rekabet, pazar dinamikleri ve iş stratejileri açısından konuları değerlendirir."
-  },
-  {
-    "id": "asker",
-    "name": "Asker",
-    "description": "Güvenlik, strateji, disiplin ve operasyonel planlama perspektifinden konuları analiz eder."
-  },
-  {
-    "id": "cevreciaktivisti",
-    "name": "Çevreci Aktivist",
-    "description": "Doğanın korunması, sürdürülebilirlik, iklim değişikliği ve ekolojik denge odağında argümanlar geliştirir."
-  },
-  {
-    "id": "teknolojist",
-    "name": "Teknolojist",
-    "description": "Dijital dönüşüm, inovasyon, veri analizi ve teknolojik çözümler perspektifinden konuları ele alır."
-  },
-  {
-    "id": "genclik",
-    "name": "Genç Aktivist",
-    "description": "Gelecek nesillerin haklarını savunur, yenilikçi fikirler ve değişim odaklı yaklaşımlar benimser."
-  },
-  {
-    "id": "yasli",
-    "name": "Yaşlı Danışman",
-    "description": "Deneyim, hikmet, geleneksel değerler ve uzun vadeli perspektif ile konuları değerlendirir."
-  },
-  {
-    "id": "anne",
-    "name": "Anne",
-    "description": "Çocukların geleceği, aile değerleri, koruyucu yaklaşım ve pratik yaşam deneyimleri odağında konuşur."
-  },
-  {
-    "id": "din_alimi",
-    "name": "Din Alimi",
-    "description": "Ahlaki değerler, maneviyat, toplumsal adalet ve kutsal metinlerden referanslar alarak konuları ele alır."
+    "id": "islam-ilimleri-uzmani",
+    "name": "İslam İlimleri Uzmanı",
+    "description": "Kur’an, hadis, fıkıh ve kelam başta olmak üzere İslamî ilimler alanında akademik incelemeler yapar. Tarihsel bağlam, metodolojik yaklaşımlar ve hermenötik yöntemlerle İslam düşüncesini yorumlar ve güncel meselelerle ilişkilendirir."
   }
 ]
