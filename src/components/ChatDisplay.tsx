@@ -90,7 +90,7 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
                   </p>
                 </div>
                 <p className="text-sm text-orange-600 mb-3">
-                  Tüm uzmanlar görüşlerini belirtti. Artık hakem kararını almak için "Hakem Kararını Göster" butonuna tıklayın.
+                  Tüm uzmanlar görüşlerini belirtti. Artık hakem kararını almak için &quot;Hakem Kararını Göster&quot; butonuna tıklayın.
                 </p>
                 <div className="flex items-center justify-center space-x-2 text-xs text-orange-500">
                   <span>🎯</span>

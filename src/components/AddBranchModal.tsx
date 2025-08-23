@@ -7,8 +7,8 @@ interface AddBranchModalProps {
   newBranchDescription: string;
   setNewBranchDescription: (description: string) => void;
   isGeneratingDescription: boolean;
-  editingBranch: any;
-  onGenerateDescription: () => void;
+  editingBranch: { id: string; name: string; description: string } | null;
+  onGenerateDescription: () => Promise<void>;
   onAddBranch: () => void;
   onClose: () => void;
 }

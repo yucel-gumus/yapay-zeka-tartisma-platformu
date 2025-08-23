@@ -42,7 +42,7 @@ export const useDebateLogic = () => {
     return shuffled;
   };
 
-  const startDebate = (allBranches: any[]) => {
+  const startDebate = (allBranches: { id: string; name: string; description: string }[]) => {
     if (selectedBranches.length !== 4 || !topic.trim()) return;
     
     const shuffledModels = shuffleArray([...availableModels]);
@@ -63,7 +63,7 @@ export const useDebateLogic = () => {
     }, 1000);
   };
 
-  const generateNextResponse = async (turnIndex: number, currentHistory: ChatMessageType[], models: string[], allBranches: any[]) => {
+  const generateNextResponse = async (turnIndex: number, currentHistory: ChatMessageType[], models: string[], allBranches: { id: string; name: string; description: string }[]) => {
     if (turnIndex >= 12) return;
     
     const branchIndex = turnIndex % 4;

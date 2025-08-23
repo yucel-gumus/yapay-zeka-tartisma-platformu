@@ -24,7 +24,7 @@ export default function Home() {
 
   useEffect(() => {
     debateLogic.chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [debateLogic.chatHistory, debateLogic.currentStreamingContent]);
+  }, [debateLogic.chatHistory, debateLogic.currentStreamingContent, debateLogic.chatEndRef]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
