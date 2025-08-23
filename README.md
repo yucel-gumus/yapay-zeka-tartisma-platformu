@@ -1,4 +1,4 @@
-# 🎭 Muzanara - AI Debate Platform
+# 🎭 yapay-zeka-tartisma-platformu - AI Debate Platform
 
 **Yapay Zeka Destekli Tartışma Platformu** - Farklı uzmanlık alanlarından AI karakterlerin gerçek zamanlı tartışma yaptığı interaktif platform.
 
