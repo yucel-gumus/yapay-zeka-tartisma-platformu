@@ -63,7 +63,7 @@ export const useDebateLogic = () => {
     }, 1000);
   };
 
-  const generateNextResponse = async (turnIndex: number, currentHistory: ChatMessageType[], models: string[], allBranches: { id: string; name: string; description: string }[]) => {
+  const generateNextResponse = async (turnIndex: number, currentHistory: ChatMessageType[], models: string[], allBranches: { id: string; name: string; description: string }[], retryCount: number = 0) => {
     if (turnIndex >= 12) return;
     
     const branchIndex = turnIndex % 4;
@@ -106,6 +106,39 @@ export const useDebateLogic = () => {
         setCurrentStreamingContent(fullContent);
       }
 
+      // Check if response is empty or too short
+      if (!fullContent.trim() || fullContent.trim().length < 10) {
+        console.warn(`Empty or too short response from ${selectedBranch.name}, retry ${retryCount + 1}/3`);
+        setCurrentStreamingContent('');
+        setIsStreamingMessage(false);
+        
+        // Retry up to 3 times
+        if (retryCount < 2) {
+          setTimeout(() => {
+            generateNextResponse(turnIndex, currentHistory, models, allBranches, retryCount + 1);
+          }, 2000);
+          return;
+        } else {
+          // After 3 failed attempts, add a fallback message and continue
+          console.error(`Failed to get response from ${selectedBranch.name} after 3 attempts, skipping turn`);
+          const fallbackMessage: ChatMessageType = {
+            role: 'assistant',
+            content: `[${selectedBranch.name} bu turda yanıt veremedi - sistem hatası]`,
+            branch: selectedBranch.id,
+            branchName: selectedBranch.name
+          };
+          
+          const updatedHistory = [...currentHistory, fallbackMessage];
+          setChatHistory(updatedHistory);
+          setCurrentTurn(turnIndex + 1);
+          
+          setTimeout(() => {
+            generateNextResponse(turnIndex + 1, updatedHistory, models, allBranches);
+          }, 1500);
+          return;
+        }
+      }
+
       const newMessage: ChatMessageType = {
         role: 'assistant',
         content: fullContent.trim(),
@@ -127,6 +160,31 @@ export const useDebateLogic = () => {
       console.error('Error generating response:', error);
       setIsStreamingMessage(false);
       setCurrentStreamingContent('');
+      
+      // Handle network/API errors with retry logic
+      if (retryCount < 2) {
+        console.warn(`API error for ${selectedBranch.name}, retry ${retryCount + 1}/3`);
+        setTimeout(() => {
+          generateNextResponse(turnIndex, currentHistory, models, allBranches, retryCount + 1);
+        }, 3000);
+      } else {
+        // After 3 failed attempts, add error message and continue
+        console.error(`Failed to get response from ${selectedBranch.name} after 3 attempts due to API error`);
+        const errorMessage: ChatMessageType = {
+          role: 'assistant',
+          content: `[${selectedBranch.name} teknik bir sorun nedeniyle bu turda yanıt veremedi]`,
+          branch: selectedBranch.id,
+          branchName: selectedBranch.name
+        };
+        
+        const updatedHistory = [...currentHistory, errorMessage];
+        setChatHistory(updatedHistory);
+        setCurrentTurn(turnIndex + 1);
+        
+        setTimeout(() => {
+          generateNextResponse(turnIndex + 1, updatedHistory, models, allBranches);
+        }, 1500);
+      }
     }
   };
 

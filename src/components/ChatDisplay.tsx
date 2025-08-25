@@ -43,7 +43,12 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
             {isDebating && (
               <button
                 onClick={onStopDebate}
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                disabled={currentTurn < 12}
+                className={`font-semibold py-2 px-4 rounded-lg transition-colors ${
+                  currentTurn >= 12 
+                    ? 'bg-red-600 hover:bg-red-700 text-white cursor-pointer' 
+                    : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                }`}
               >
                 👨‍⚖️ Hakem Kararını Göster
               </button>
@@ -63,6 +68,22 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
           {chatHistory.map((message, index) => (
             <ChatMessage key={index} message={message} />
           ))}
+          
+          {isStreamingMessage && !currentStreamingContent && (
+            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
+              <div className="text-blue-700">
+                <span className="font-semibold">
+                  {allBranches.find((b) => b.id === selectedBranches[currentTurn % 4])?.name}
+                </span>
+                <span className="text-blue-600 ml-1">düşünüyor...</span>
+              </div>
+            </div>
+          )}
           
           {isStreamingMessage && currentStreamingContent && (
             <ChatMessage
