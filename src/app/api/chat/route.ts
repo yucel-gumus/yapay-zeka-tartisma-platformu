@@ -80,8 +80,7 @@ Amacın: Gerçek bir televizyon münazarasında gibi, sert ve çatışmalı bir 
       },
     });
 
-  } catch (error) {
-    console.error('Chat API error:', error);
+  } catch {
     return new Response('Internal server error', { status: 500 });
   }
 }

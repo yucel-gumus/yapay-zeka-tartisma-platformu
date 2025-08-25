@@ -8,6 +8,7 @@ import DebateSetup from '@/components/DebateSetup';
 import ChatDisplay from '@/components/ChatDisplay';
 import AddBranchModal from '@/components/AddBranchModal';
 import JudgePopup from '@/components/JudgePopup';
+import ShareModal from '@/components/ShareModal';
 
 const branches = branchesData as Array<{
   id: string;
@@ -19,7 +20,6 @@ export default function Home() {
   const debateLogic = useDebateLogic();
   const branchManagement = useBranchManagement();
 
-  // Get all branches (default + custom)
   const allBranches = [...branches, ...branchManagement.customBranches];
 
   useEffect(() => {
@@ -66,6 +66,7 @@ export default function Home() {
             finalVerdict={debateLogic.finalVerdict}
             onStopDebate={debateLogic.stopDebate}
             onResetDebate={debateLogic.resetDebate}
+            onShareDebate={debateLogic.openShareModal}
             chatEndRef={debateLogic.chatEndRef}
           />
         )}
@@ -92,6 +93,12 @@ export default function Home() {
           onGenerateDescription={branchManagement.generateDescription}
           onAddBranch={branchManagement.addCustomBranch}
           onClose={branchManagement.closeAddBranchModal}
+        />
+
+        <ShareModal
+          isOpen={debateLogic.showShareModal}
+          onClose={debateLogic.closeShareModal}
+          debateData={debateLogic.generateShareData(allBranches)}
         />
       </div>
     </div>

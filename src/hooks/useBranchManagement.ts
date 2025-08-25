@@ -14,7 +14,6 @@ export const useBranchManagement = () => {
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
 
-  // Load custom branches from localStorage on component mount
   useEffect(() => {
     const savedBranches = localStorage.getItem('customBranches');
     if (savedBranches) {
@@ -48,8 +47,8 @@ export const useBranchManagement = () => {
         const data = await response.json();
         setNewBranchDescription(data.description);
       }
-    } catch (error) {
-      console.error('Error generating description:', error);
+    } catch {
+      // Hata durumunda sessizce devam et
     } finally {
       setIsGeneratingDescription(false);
     }
@@ -61,7 +60,6 @@ export const useBranchManagement = () => {
     let updatedCustomBranches;
     
     if (editingBranch) {
-      // Edit existing branch
       updatedCustomBranches = customBranches.map(branch => 
         branch.id === editingBranch.id 
           ? { ...branch, name: newBranchName.trim(), description: newBranchDescription.trim() }
@@ -69,7 +67,6 @@ export const useBranchManagement = () => {
       );
       setEditingBranch(null);
     } else {
-      // Add new branch
       const newBranch: Branch = {
         id: generateBranchId(newBranchName),
         name: newBranchName.trim(),
@@ -81,7 +78,6 @@ export const useBranchManagement = () => {
     setCustomBranches(updatedCustomBranches);
     localStorage.setItem('customBranches', JSON.stringify(updatedCustomBranches));
     
-    // Reset form
     setNewBranchName('');
     setNewBranchDescription('');
     setShowAddBranchModal(false);

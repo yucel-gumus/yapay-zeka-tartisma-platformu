@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
 import { availableModels } from '@/lib/gemini';
+import { SharedDebateData } from '@/utils/shareUtils';
+import { Branch } from './useBranchManagement';
 
 export interface ChatMessageType {
   role: 'user' | 'assistant' | 'judge';
@@ -19,6 +21,7 @@ export const useDebateLogic = () => {
   const [currentStreamingContent, setCurrentStreamingContent] = useState('');
   const [showJudgePopup, setShowJudgePopup] = useState(false);
   const [isJudgeLoading, setIsJudgeLoading] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -108,7 +111,6 @@ export const useDebateLogic = () => {
 
       // Check if response is empty or too short
       if (!fullContent.trim() || fullContent.trim().length < 10) {
-        console.warn(`Empty or too short response from ${selectedBranch.name}, retry ${retryCount + 1}/3`);
         setCurrentStreamingContent('');
         setIsStreamingMessage(false);
         
@@ -120,7 +122,6 @@ export const useDebateLogic = () => {
           return;
         } else {
           // After 3 failed attempts, add a fallback message and continue
-          console.error(`Failed to get response from ${selectedBranch.name} after 3 attempts, skipping turn`);
           const fallbackMessage: ChatMessageType = {
             role: 'assistant',
             content: `[${selectedBranch.name} bu turda yanıt veremedi - sistem hatası]`,
@@ -156,20 +157,15 @@ export const useDebateLogic = () => {
         generateNextResponse(turnIndex + 1, updatedHistory, models, allBranches);
       }, 1500);
 
-    } catch (error) {
-      console.error('Error generating response:', error);
+    } catch {
       setIsStreamingMessage(false);
       setCurrentStreamingContent('');
       
-      // Handle network/API errors with retry logic
       if (retryCount < 2) {
-        console.warn(`API error for ${selectedBranch.name}, retry ${retryCount + 1}/3`);
         setTimeout(() => {
           generateNextResponse(turnIndex, currentHistory, models, allBranches, retryCount + 1);
         }, 3000);
       } else {
-        // After 3 failed attempts, add error message and continue
-        console.error(`Failed to get response from ${selectedBranch.name} after 3 attempts due to API error`);
         const errorMessage: ChatMessageType = {
           role: 'assistant',
           content: `[${selectedBranch.name} teknik bir sorun nedeniyle bu turda yanıt veremedi]`,
@@ -219,8 +215,7 @@ export const useDebateLogic = () => {
       };
       setChatHistory((prev: ChatMessageType[]) => [...prev, judgeMessage]);
 
-    } catch (error) {
-      console.error('Error getting judge verdict:', error);
+    } catch {
       setFinalVerdict('Hakem kararı alınırken bir hata oluştu.');
       setIsJudgeLoading(false);
     }
@@ -243,6 +238,29 @@ export const useDebateLogic = () => {
     setShowJudgePopup(false);
   };
 
+  const openShareModal = () => {
+    setShowShareModal(true);
+  };
+
+  const closeShareModal = () => {
+    setShowShareModal(false);
+  };
+
+  const generateShareData = (allBranches: Branch[]): SharedDebateData => {
+    const selectedBranchDetails = allBranches.filter(branch => 
+      selectedBranches.includes(branch.id)
+    );
+
+    return {
+      topic,
+      chatHistory,
+      selectedBranches,
+      branchDetails: selectedBranchDetails,
+      finalVerdict,
+      timestamp: Date.now()
+    };
+  };
+
   return {
     selectedBranches,
     topic,
@@ -255,11 +273,15 @@ export const useDebateLogic = () => {
     currentStreamingContent,
     showJudgePopup,
     isJudgeLoading,
+    showShareModal,
     chatEndRef,
     handleBranchSelection,
     startDebate,
     stopDebate,
     resetDebate,
-    closeJudgePopup
+    closeJudgePopup,
+    openShareModal,
+    closeShareModal,
+    generateShareData
   };
 };

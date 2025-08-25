@@ -15,6 +15,7 @@ interface ChatDisplayProps {
   finalVerdict: string;
   onStopDebate: () => void;
   onResetDebate: () => void;
+  onShareDebate: () => void;
   chatEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -30,11 +31,12 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
   finalVerdict,
   onStopDebate,
   onResetDebate,
+  onShareDebate,
   chatEndRef
 }) => {
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="max-w-6xl min-h-screen mx-auto">
+      <div className="bg-white  min-h-screen rounded-lg shadow-lg p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold text-gray-800">
             💬 Canlı Tartışma
@@ -54,17 +56,25 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
               </button>
             )}
             {finalVerdict && (
-              <button
-                onClick={onResetDebate}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-              >
-                🔄 Yeni Tartışma
-              </button>
+              <>
+                <button
+                  onClick={onShareDebate}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                >
+                  🔗 Paylaş
+                </button>
+                <button
+                  onClick={onResetDebate}
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                >
+                  🔄 Yeni Tartışma
+                </button>
+              </>
             )}
           </div>
         </div>
 
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div className="space-y-4 min-h-screen overflow-y-auto">
           {chatHistory.map((message, index) => (
             <ChatMessage key={index} message={message} />
           ))}

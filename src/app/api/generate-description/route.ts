@@ -27,8 +27,7 @@ export async function POST(request: NextRequest) {
 
     return Response.json({ description: description.trim() });
 
-  } catch (error) {
-    console.error('Açıklama oluşturulurken hata oluştu:', error);
+  } catch {
     return new Response('Açıklama oluşturulurken hata oluştu', { status: 500 });
   }
 }
