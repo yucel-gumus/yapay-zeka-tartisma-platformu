@@ -137,7 +137,7 @@ function DebateContent() {
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-6 border border-yellow-200">
               <div className="prose max-w-none">
                 <div className="whitespace-pre-wrap text-gray-700">
-                  "Hakem Kararı oluşmadı"
+                  &quot;Hakem Kararı oluşmadı&quot;
                 </div>
               </div>
             </div>
