@@ -61,7 +61,7 @@ const DebateSetup: React.FC<DebateSetupProps> = ({
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="Örn: Yapay zeka teknolojisinin toplum üzerindeki etkisi"
-                className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300 bg-black shadow-sm hover:shadow-md placeholder-gray-400"
+                className="w-full px-6 py-4 text-lg border-2 text-gray-200 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300 bg-black shadow-sm hover:shadow-md placeholder-gray-400"
               />
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
                 <div className={`w-3 h-3 rounded-full ${topic.trim() ? 'bg-green-400' : 'bg-gray-300'} transition-colors`}></div>
