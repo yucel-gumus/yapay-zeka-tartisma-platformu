@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const model = getModel(judgeModel);
+    const fallbackModel = getModel('gemini-2.5-flash'); // Fallback model
 
     // Sadece uzman bot yanıtlarını al (assistant role)
     const expertOpinions = chatHistory
@@ -39,11 +40,41 @@ Kısa ve net cevap ver. Maksimum 3-4 cümle. Formatın şöyle olsun:
 
 Örnek: "Çevre ve Kimya uzmanlarının argümanları daha güçlü. CFC gazlarının ozon tabakasını incelttiği bilimsel olarak kanıtlanmış. SONUÇ: Evet, ozon tabakası delik."`;
 
-    const result = await model.generateContent(judgePrompt);
-    const response = await result.response;
-    const verdict = response.text();
+    // Ana model ile deneme
+    try {
+      console.log('Trying primary model (gemini-2.5-pro)');
+      const result = await model.generateContent(judgePrompt);
+      const response = await result.response;
+      const verdict = response.text();
+      
+      if (verdict && verdict.trim()) {
+        console.log('Primary model success');
+        return Response.json({ verdict });
+      }
+    } catch (error) {
+      console.log('Primary model failed, trying fallback:', error instanceof Error ? error.message : String(error));
+    }
+
+    // Fallback model ile deneme
+    try {
+      console.log('Trying fallback model (gemini-2.5-flash)');
+      const result = await fallbackModel.generateContent(judgePrompt);
+      const response = await result.response;
+      const verdict = response.text();
+      
+      if (verdict && verdict.trim()) {
+        console.log('Fallback model success');
+        return Response.json({ verdict });
+      }
+    } catch (error) {
+      console.log('Fallback model also failed:', error instanceof Error ? error.message : String(error));
+    }
     
-    return Response.json({ verdict });
+    // Her iki model de başarısız olursa
+    console.error('Both models failed, using static fallback');
+    return Response.json({ 
+      verdict: 'Hakem sistemi geçici olarak kullanılamıyor. Uzmanların görüşleri kaydedildi ve tartışma devam edebilir.' 
+    });
 
   } catch (error) {
     console.error('Judge API error:', error);
