@@ -12,9 +12,9 @@ export const getModel = (modelName: string = 'gemini-2.5-flash') => {
 
 export const availableModels = [
   'gemini-2.5-flash',
-  'gemini-2.5-flash-lite', 
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite'
+  'gemini-2.5-flash-lite',
+  'gemini-3-flash-preview',
+  'gemini-3-flash-preview'
 ];
 
-export const judgeModel = 'gemini-2.5-pro';
+export const judgeModel = 'gemini-3-pro-preview';
