@@ -160,7 +160,7 @@ export const useDebateLogic = () => {
       setIsStreamingMessage(false);
       setCurrentStreamingContent('');
       
-      if (retryCount < 2) {
+      if (retryCount < 3) {
         setTimeout(() => {
           generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
         }, 3000);
