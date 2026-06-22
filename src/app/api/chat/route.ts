@@ -1,6 +1,9 @@
 import { gatewayHeaders, gatewayUrl } from '@/lib/gateway';
 import { NextRequest } from 'next/server';
 
+export const maxDuration = 120;
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { chatHistory, personaDescription, topic } = await request.json();
@@ -12,6 +15,7 @@ export async function POST(request: NextRequest) {
     const upstream = await fetch(gatewayUrl('/api/debate/turn'), {
       method: 'POST',
       headers: gatewayHeaders(),
+      signal: AbortSignal.timeout(115_000),
       body: JSON.stringify({
         topic,
         persona: {

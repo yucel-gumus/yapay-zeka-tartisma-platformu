@@ -114,7 +114,7 @@ export const useDebateLogic = () => {
         setIsStreamingMessage(false);
         
         // Retry up to 3 times
-        if (retryCount < 2) {
+        if (retryCount < 3) {
           setTimeout(() => {
             generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
           }, 2000);
