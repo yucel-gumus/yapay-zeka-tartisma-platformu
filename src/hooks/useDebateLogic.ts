@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { availableModels } from '@/lib/gemini';
 import { SharedDebateData } from '@/utils/shareUtils';
 import { Branch } from './useBranchManagement';
 
@@ -48,8 +47,8 @@ export const useDebateLogic = () => {
   const startDebate = (allBranches: { id: string; name: string; description: string }[]) => {
     if (selectedBranches.length !== 4 || !topic.trim()) return;
     
-    const shuffledModels = shuffleArray([...availableModels]);
-    
+    const shuffledBranchOrder = shuffleArray([...selectedBranches]);
+
     setIsDebating(true);
     setCurrentTurn(0);
     setChatHistory([]);
@@ -62,15 +61,16 @@ export const useDebateLogic = () => {
     setChatHistory([initialMessage]);
     
     setTimeout(() => {
-      generateNextResponse(0, [initialMessage], shuffledModels.slice(0, 4), allBranches);
+      generateNextResponse(0, [initialMessage], shuffledBranchOrder, allBranches);
     }, 1000);
   };
 
-  const generateNextResponse = async (turnIndex: number, currentHistory: ChatMessageType[], models: string[], allBranches: { id: string; name: string; description: string }[], retryCount: number = 0) => {
+  const generateNextResponse = async (turnIndex: number, currentHistory: ChatMessageType[], branchOrder: string[], allBranches: { id: string; name: string; description: string }[], retryCount: number = 0) => {
     if (turnIndex >= 12) return;
     
     const branchIndex = turnIndex % 4;
-    const selectedBranch = allBranches.find((b) => b.id === selectedBranches[branchIndex]);
+    const branchId = branchOrder[branchIndex];
+    const selectedBranch = allBranches.find((b) => b.id === branchId);
     
     if (!selectedBranch) return;
     
@@ -85,7 +85,6 @@ export const useDebateLogic = () => {
         },
         body: JSON.stringify({
           chatHistory: currentHistory,
-          currentModel: models[branchIndex],
           personaDescription: selectedBranch,
           topic,
           branch: selectedBranch.id
@@ -117,7 +116,7 @@ export const useDebateLogic = () => {
         // Retry up to 3 times
         if (retryCount < 2) {
           setTimeout(() => {
-            generateNextResponse(turnIndex, currentHistory, models, allBranches, retryCount + 1);
+            generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
           }, 2000);
           return;
         } else {
@@ -134,7 +133,7 @@ export const useDebateLogic = () => {
           setCurrentTurn(turnIndex + 1);
           
           setTimeout(() => {
-            generateNextResponse(turnIndex + 1, updatedHistory, models, allBranches);
+            generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
           }, 1500);
           return;
         }
@@ -154,7 +153,7 @@ export const useDebateLogic = () => {
       setCurrentTurn(turnIndex + 1);
 
       setTimeout(() => {
-        generateNextResponse(turnIndex + 1, updatedHistory, models, allBranches);
+        generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
       }, 1500);
 
     } catch {
@@ -163,7 +162,7 @@ export const useDebateLogic = () => {
       
       if (retryCount < 2) {
         setTimeout(() => {
-          generateNextResponse(turnIndex, currentHistory, models, allBranches, retryCount + 1);
+          generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
         }, 3000);
       } else {
         const errorMessage: ChatMessageType = {
@@ -178,7 +177,7 @@ export const useDebateLogic = () => {
         setCurrentTurn(turnIndex + 1);
         
         setTimeout(() => {
-          generateNextResponse(turnIndex + 1, updatedHistory, models, allBranches);
+          generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
         }, 1500);
       }
     }

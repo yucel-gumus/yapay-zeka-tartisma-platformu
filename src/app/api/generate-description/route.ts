@@ -1,5 +1,5 @@
+import { gatewayHeaders, gatewayUrl } from '@/lib/gateway';
 import { NextRequest } from 'next/server';
-import { getModel } from '@/lib/gemini';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,8 +8,6 @@ export async function POST(request: NextRequest) {
     if (!name) {
       return new Response('Uzmanlık alanı adı gerekli', { status: 400 });
     }
-
-    const model = getModel('gemini-2.5-flash');
 
     const prompt = `
     "${name}" alanı için açıklama yaz.
@@ -21,12 +19,21 @@ export async function POST(request: NextRequest) {
     - Metaforik veya kişiselleştirilmiş ifadeler olmayacak
     Çıktıyı sadece açıklama metni olarak ver.
     `;
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const description = response.text();
 
-    return Response.json({ description: description.trim() });
+    const upstream = await fetch(gatewayUrl('/api/generate'), {
+      method: 'POST',
+      headers: gatewayHeaders(),
+      body: JSON.stringify({ prompt }),
+    });
 
+    if (!upstream.ok) {
+      return new Response('Açıklama oluşturulurken hata oluştu', {
+        status: upstream.status,
+      });
+    }
+
+    const data = await upstream.json();
+    return Response.json({ description: (data.text || '').trim() });
   } catch {
     return new Response('Açıklama oluşturulurken hata oluştu', { status: 500 });
   }
