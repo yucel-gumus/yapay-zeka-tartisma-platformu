@@ -37,7 +37,7 @@ def gateway_client_key_plain() -> str:
 client_key = gateway_client_key_plain()
 
 for name, val in (
-    ("AI_API_URL", "https://api.yucelgumus.dev"),
+    ("AI_API_URL", "https://python-backend-270384591051.europe-west3.run.app"),
     ("GATEWAY_CLIENT_API_KEY", client_key),
 ):
     subprocess.run(
