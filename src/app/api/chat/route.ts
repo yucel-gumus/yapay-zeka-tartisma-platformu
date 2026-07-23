@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
         chat_history: (chatHistory || [])
           .filter((msg: { role?: string; content?: string }) => msg && typeof msg.content === 'string' && msg.content.trim().length > 0)
           .map(
-            (msg: { role: string; content: string; branchName?: string }) => ({
+            (msg: { role: string; content: string; branchName?: string; branch?: string }) => ({
               role: msg.role,
               content: msg.content.trim(),
-              branch_name: msg.branchName ?? null,
+              branch_name: msg.branchName || msg.branch || null,
             })
           ),
       }),
