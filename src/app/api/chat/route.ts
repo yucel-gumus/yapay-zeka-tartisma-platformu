@@ -25,11 +25,15 @@ export async function POST(request: NextRequest) {
         chat_history: (chatHistory || [])
           .filter((msg: { role?: string; content?: string }) => msg && typeof msg.content === 'string' && msg.content.trim().length > 0)
           .map(
-            (msg: { role: string; content: string; branchName?: string; branch?: string }) => ({
-              role: msg.role,
-              content: msg.content.trim(),
-              branch_name: msg.branchName || msg.branch || null,
-            })
+            (msg: { role: string; content: string; branchName?: string; branch?: string }) => {
+              const r = (msg.role || 'assistant').toLowerCase();
+              const role = (r === 'user' || r === 'judge') ? r : 'assistant';
+              return {
+                role,
+                content: msg.content.trim(),
+                branch_name: msg.branchName || msg.branch || null,
+              };
+            }
           ),
       }),
     });
