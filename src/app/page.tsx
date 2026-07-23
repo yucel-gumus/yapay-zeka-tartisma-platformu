@@ -9,12 +9,10 @@ import ChatDisplay from '@/components/ChatDisplay';
 import AddBranchModal from '@/components/AddBranchModal';
 import JudgePopup from '@/components/JudgePopup';
 import ShareModal from '@/components/ShareModal';
+import { Branch } from '@/types/debate';
+import { RobotIcon } from '@/components/ui/Icons';
 
-const branches = branchesData as Array<{
-  id: string;
-  name: string;
-  description: string;
-}>;
+const branches = branchesData as Branch[];
 
 export default function Home() {
   const debateLogic = useDebateLogic();
@@ -27,17 +25,27 @@ export default function Home() {
   }, [debateLogic.chatHistory, debateLogic.currentStreamingContent, debateLogic.chatEndRef]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            🤖 Yapay Zeka Tartışma Platformu
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Farklı uzmanlık alanlarından yapay zeka modellerinin canlı tartışması
-          </p>
+    <div className="min-h-screen bg-[#FFEBD3] py-6 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+
+        {/* MINIMAL HEADER BAR */}
+        <header className="flex items-center justify-between py-3 px-5 bg-[#FFEBD3] border-2 border-[#FFB6A6] rounded-2xl shadow-xs">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-[#9BCEC1] text-[#2C1A18] rounded-xl shadow-xs">
+              <RobotIcon size={22} />
+            </div>
+            <div>
+              <h1 className="text-lg font-extrabold text-[#2C1A18] tracking-tight leading-tight">
+                Yapay Zeka Tartışma Platformu
+              </h1>
+              <p className="text-xs text-[#5E3D38] font-semibold">
+                Farklı disiplinlerden yapay zeka modellerinin canlı bilimsel tartışması
+              </p>
+            </div>
+          </div>
         </header>
 
+        {/* MAIN BODY AREA (Command Setup vs Live Arena) */}
         {!debateLogic.isDebating && !debateLogic.finalVerdict && (
           <DebateSetup
             topic={debateLogic.topic}
@@ -59,6 +67,7 @@ export default function Home() {
             isStreamingMessage={debateLogic.isStreamingMessage}
             currentStreamingContent={debateLogic.currentStreamingContent}
             selectedBranches={debateLogic.selectedBranches}
+            activeBranchOrder={debateLogic.activeBranchOrder}
             currentTurn={debateLogic.currentTurn}
             allBranches={allBranches}
             topic={debateLogic.topic}
@@ -71,10 +80,11 @@ export default function Home() {
           />
         )}
 
-        <footer className="text-center mt-12 text-gray-500 text-sm">
+        <footer className="text-center text-[#5E3D38] text-sm font-semibold border-t-2 border-[#FFB6A6]/40 pt-6">
           <p>Powered by Google Gemini AI • Next.js • Tailwind CSS</p>
         </footer>
 
+        {/* MODALS */}
         <JudgePopup
           showPopup={debateLogic.showJudgePopup}
           isLoading={debateLogic.isJudgeLoading}

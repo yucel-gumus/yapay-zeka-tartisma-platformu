@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
+import { Branch } from '@/types/debate';
+import { STORAGE_KEYS } from '@/config/constants';
 
-export interface Branch {
-  id: string;
-  name: string;
-  description: string;
-}
+export type { Branch };
 
 export const useBranchManagement = () => {
   const [customBranches, setCustomBranches] = useState<Branch[]>([]);
@@ -15,24 +13,27 @@ export const useBranchManagement = () => {
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
 
   useEffect(() => {
-    const savedBranches = localStorage.getItem('customBranches');
+    const savedBranches = localStorage.getItem(STORAGE_KEYS.CUSTOM_BRANCHES);
     if (savedBranches) {
-      setCustomBranches(JSON.parse(savedBranches));
+      try {
+        setCustomBranches(JSON.parse(savedBranches));
+      } catch {
+        setCustomBranches([]);
+      }
     }
   }, []);
 
   const generateBranchId = (name: string) => {
     return name
       .toLowerCase()
-      .replace(/[^\p{L}0-9\s]/gu, '') 
-      .replace(/\s+/g, '-')           
-      .substring(0, 50);         
+      .replace(/[^\p{L}0-9\s]/gu, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 50);
   };
-  
 
   const generateDescription = async () => {
     if (!newBranchName.trim()) return;
-    
+
     setIsGeneratingDescription(true);
     try {
       const response = await fetch('/api/generate-description', {
@@ -42,13 +43,13 @@ export const useBranchManagement = () => {
         },
         body: JSON.stringify({ name: newBranchName }),
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setNewBranchDescription(data.description);
       }
     } catch {
-      // Hata durumunda sessizce devam et
+      // Hata durumunda sakince devam et
     } finally {
       setIsGeneratingDescription(false);
     }
@@ -56,12 +57,12 @@ export const useBranchManagement = () => {
 
   const addCustomBranch = () => {
     if (!newBranchName.trim() || !newBranchDescription.trim()) return;
-    
-    let updatedCustomBranches;
-    
+
+    let updatedCustomBranches: Branch[];
+
     if (editingBranch) {
-      updatedCustomBranches = customBranches.map(branch => 
-        branch.id === editingBranch.id 
+      updatedCustomBranches = customBranches.map(branch =>
+        branch.id === editingBranch.id
           ? { ...branch, name: newBranchName.trim(), description: newBranchDescription.trim() }
           : branch
       );
@@ -70,14 +71,14 @@ export const useBranchManagement = () => {
       const newBranch: Branch = {
         id: generateBranchId(newBranchName),
         name: newBranchName.trim(),
-        description: newBranchDescription.trim()
+        description: newBranchDescription.trim(),
       };
       updatedCustomBranches = [...customBranches, newBranch];
     }
-    
+
     setCustomBranches(updatedCustomBranches);
-    localStorage.setItem('customBranches', JSON.stringify(updatedCustomBranches));
-    
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_BRANCHES, JSON.stringify(updatedCustomBranches));
+
     setNewBranchName('');
     setNewBranchDescription('');
     setShowAddBranchModal(false);
@@ -100,7 +101,7 @@ export const useBranchManagement = () => {
   const deleteBranch = (branchId: string) => {
     const updatedCustomBranches = customBranches.filter(branch => branch.id !== branchId);
     setCustomBranches(updatedCustomBranches);
-    localStorage.setItem('customBranches', JSON.stringify(updatedCustomBranches));
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_BRANCHES, JSON.stringify(updatedCustomBranches));
   };
 
   return {
@@ -117,6 +118,6 @@ export const useBranchManagement = () => {
     addCustomBranch,
     closeAddBranchModal,
     editBranch,
-    deleteBranch
+    deleteBranch,
   };
 };

@@ -1,8 +1,12 @@
 const gatewayBase = (): string => {
-  const url =
-    process.env.AI_API_URL ||
-    process.env.GEMINI_GATEWAY_URL ||
-    'https://python-backend-270384591051.europe-west3.run.app';
+  const url = process.env.AI_API_URL || process.env.GEMINI_GATEWAY_URL;
+  if (!url) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('AI_API_URL or GEMINI_GATEWAY_URL environment variable is not configured');
+    }
+    // Development fallback
+    return 'https://python-backend-270384591051.europe-west3.run.app';
+  }
   return url.replace(/\/$/, '');
 };
 

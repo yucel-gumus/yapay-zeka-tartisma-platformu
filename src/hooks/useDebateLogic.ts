@@ -1,16 +1,12 @@
-import { useState, useRef } from 'react';
-import { SharedDebateData } from '@/utils/shareUtils';
-import { Branch } from './useBranchManagement';
+import { useState, useRef, useCallback } from 'react';
+import { ChatMessageType, Branch, SharedDebateData } from '@/types/debate';
+import { DEBATE_CONFIG } from '@/config/constants';
 
-export interface ChatMessageType {
-  role: 'user' | 'assistant' | 'judge';
-  content: string;
-  branch?: string;
-  branchName?: string;
-}
+export type { ChatMessageType };
 
 export const useDebateLogic = () => {
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+  const [activeBranchOrder, setActiveBranchOrder] = useState<string[]>([]);
   const [topic, setTopic] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMessageType[]>([]);
   const [isDebating, setIsDebating] = useState(false);
@@ -23,12 +19,13 @@ export const useDebateLogic = () => {
   const [showShareModal, setShowShareModal] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleBranchSelection = (branchId: string) => {
     setSelectedBranches((prev: string[]) => {
       if (prev.includes(branchId)) {
         return prev.filter((id: string) => id !== branchId);
-      } else if (prev.length < 4) {
+      } else if (prev.length < DEBATE_CONFIG.REQUIRED_EXPERTS) {
         return [...prev, branchId];
       }
       return prev;
@@ -44,50 +41,43 @@ export const useDebateLogic = () => {
     return shuffled;
   };
 
-  const startDebate = (allBranches: { id: string; name: string; description: string }[]) => {
-    if (selectedBranches.length !== 4 || !topic.trim()) return;
-    
-    const shuffledBranchOrder = shuffleArray([...selectedBranches]);
+  const generateNextResponse = useCallback(async (
+    turnIndex: number,
+    currentHistory: ChatMessageType[],
+    branchOrder: string[],
+    allBranches: Branch[],
+    retryCount: number = 0
+  ) => {
+    if (turnIndex >= DEBATE_CONFIG.TOTAL_TURNS) return;
 
-    setIsDebating(true);
-    setCurrentTurn(0);
-    setChatHistory([]);
-    setFinalVerdict('');
-    
-    const initialMessage: ChatMessageType = {
-      role: 'user',
-      content: `Tartışma konusu: "${topic}". Seçilen uzmanlar tartışmaya başlıyor...`
-    };
-    setChatHistory([initialMessage]);
-    
-    setTimeout(() => {
-      generateNextResponse(0, [initialMessage], shuffledBranchOrder, allBranches);
-    }, 1000);
-  };
-
-  const generateNextResponse = async (turnIndex: number, currentHistory: ChatMessageType[], branchOrder: string[], allBranches: { id: string; name: string; description: string }[], retryCount: number = 0) => {
-    if (turnIndex >= 12) return;
-    
-    const branchIndex = turnIndex % 4;
+    const branchIndex = turnIndex % DEBATE_CONFIG.REQUIRED_EXPERTS;
     const branchId = branchOrder[branchIndex];
     const selectedBranch = allBranches.find((b) => b.id === branchId);
-    
+
     if (!selectedBranch) return;
-    
+
     setIsStreamingMessage(true);
     setCurrentStreamingContent('');
-    
+
+    // AbortController initialization
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
         body: JSON.stringify({
           chatHistory: currentHistory,
           personaDescription: selectedBranch,
           topic,
-          branch: selectedBranch.id
+          branch: selectedBranch.id,
         }),
       });
 
@@ -102,39 +92,44 @@ export const useDebateLogic = () => {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         const chunk = decoder.decode(value, { stream: true });
         fullContent += chunk;
-        setCurrentStreamingContent(fullContent);
+        if (!controller.signal.aborted) {
+          setCurrentStreamingContent(fullContent);
+        }
       }
 
-      // Check if response is empty or too short
+      if (controller.signal.aborted) return;
+
       if (!fullContent.trim() || fullContent.trim().length < 10) {
         setCurrentStreamingContent('');
         setIsStreamingMessage(false);
-        
-        // Retry up to 3 times
-        if (retryCount < 3) {
+
+        if (retryCount < DEBATE_CONFIG.MAX_RETRIES) {
           setTimeout(() => {
-            generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
-          }, 2000);
+            if (!controller.signal.aborted) {
+              generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
+            }
+          }, DEBATE_CONFIG.RETRY_STREAM_DELAY_MS);
           return;
         } else {
-          // After 3 failed attempts, add a fallback message and continue
           const fallbackMessage: ChatMessageType = {
             role: 'assistant',
             content: `[${selectedBranch.name} bu turda yanıt veremedi - sistem hatası]`,
             branch: selectedBranch.id,
-            branchName: selectedBranch.name
+            branchName: selectedBranch.name,
           };
-          
+
           const updatedHistory = [...currentHistory, fallbackMessage];
           setChatHistory(updatedHistory);
           setCurrentTurn(turnIndex + 1);
-          
+
           setTimeout(() => {
-            generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
-          }, 1500);
+            if (!controller.signal.aborted) {
+              generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
+            }
+          }, DEBATE_CONFIG.NEXT_TURN_DELAY_MS);
           return;
         }
       }
@@ -143,7 +138,7 @@ export const useDebateLogic = () => {
         role: 'assistant',
         content: fullContent.trim(),
         branch: selectedBranch.id,
-        branchName: selectedBranch.name
+        branchName: selectedBranch.name,
       };
 
       const updatedHistory = [...currentHistory, newMessage];
@@ -153,43 +148,78 @@ export const useDebateLogic = () => {
       setCurrentTurn(turnIndex + 1);
 
       setTimeout(() => {
-        generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
-      }, 1500);
+        if (!controller.signal.aborted) {
+          generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
+        }
+      }, DEBATE_CONFIG.NEXT_TURN_DELAY_MS);
 
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return; // Request was aborted cleanly
+      }
+
       setIsStreamingMessage(false);
       setCurrentStreamingContent('');
-      
-      if (retryCount < 3) {
+
+      if (retryCount < DEBATE_CONFIG.MAX_RETRIES) {
         setTimeout(() => {
-          generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
-        }, 3000);
+          if (!controller.signal.aborted) {
+            generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
+          }
+        }, DEBATE_CONFIG.RETRY_ERROR_DELAY_MS);
       } else {
         const errorMessage: ChatMessageType = {
           role: 'assistant',
           content: `[${selectedBranch.name} teknik bir sorun nedeniyle bu turda yanıt veremedi]`,
           branch: selectedBranch.id,
-          branchName: selectedBranch.name
+          branchName: selectedBranch.name,
         };
-        
+
         const updatedHistory = [...currentHistory, errorMessage];
         setChatHistory(updatedHistory);
         setCurrentTurn(turnIndex + 1);
-        
+
         setTimeout(() => {
-          generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
-        }, 1500);
+          if (!controller.signal.aborted) {
+            generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
+          }
+        }, DEBATE_CONFIG.NEXT_TURN_DELAY_MS);
       }
     }
+  }, [topic]);
+
+  const startDebate = (allBranches: Branch[]) => {
+    if (selectedBranches.length !== DEBATE_CONFIG.REQUIRED_EXPERTS || !topic.trim()) return;
+
+    const shuffledBranchOrder = shuffleArray([...selectedBranches]);
+    setActiveBranchOrder(shuffledBranchOrder);
+
+    setIsDebating(true);
+    setCurrentTurn(0);
+    setChatHistory([]);
+    setFinalVerdict('');
+
+    const initialMessage: ChatMessageType = {
+      role: 'user',
+      content: `Tartışma konusu: "${topic}". Seçilen uzmanlar tartışmaya başlıyor...`,
+    };
+    setChatHistory([initialMessage]);
+
+    setTimeout(() => {
+      generateNextResponse(0, [initialMessage], shuffledBranchOrder, allBranches);
+    }, DEBATE_CONFIG.START_DEBATE_DELAY_MS);
   };
 
   const stopDebate = async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setIsDebating(false);
     setIsStreamingMessage(false);
     setShowJudgePopup(true);
     setIsJudgeLoading(true);
     setFinalVerdict('');
-    
+
     try {
       const response = await fetch('/api/judge', {
         method: 'POST',
@@ -198,7 +228,7 @@ export const useDebateLogic = () => {
         },
         body: JSON.stringify({
           chatHistory,
-          topic
+          topic,
         }),
       });
 
@@ -207,10 +237,10 @@ export const useDebateLogic = () => {
       const data = await response.json();
       setFinalVerdict(data.verdict);
       setIsJudgeLoading(false);
-      
+
       const judgeMessage: ChatMessageType = {
         role: 'judge',
-        content: data.verdict
+        content: data.verdict,
       };
       setChatHistory((prev: ChatMessageType[]) => [...prev, judgeMessage]);
 
@@ -221,7 +251,11 @@ export const useDebateLogic = () => {
   };
 
   const resetDebate = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setSelectedBranches([]);
+    setActiveBranchOrder([]);
     setTopic('');
     setChatHistory([]);
     setIsDebating(false);
@@ -246,7 +280,7 @@ export const useDebateLogic = () => {
   };
 
   const generateShareData = (allBranches: Branch[]): SharedDebateData => {
-    const selectedBranchDetails = allBranches.filter(branch => 
+    const selectedBranchDetails = allBranches.filter(branch =>
       selectedBranches.includes(branch.id)
     );
 
@@ -256,12 +290,13 @@ export const useDebateLogic = () => {
       selectedBranches,
       branchDetails: selectedBranchDetails,
       finalVerdict,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   };
 
   return {
     selectedBranches,
+    activeBranchOrder,
     topic,
     setTopic,
     chatHistory,
@@ -281,6 +316,6 @@ export const useDebateLogic = () => {
     closeJudgePopup,
     openShareModal,
     closeShareModal,
-    generateShareData
+    generateShareData,
   };
 };

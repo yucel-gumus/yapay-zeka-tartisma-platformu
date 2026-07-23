@@ -1,5 +1,6 @@
 import React from 'react';
-import { Branch } from '@/hooks/useBranchManagement';
+import { Branch } from '@/types/debate';
+import { IdeaIcon, UsersIcon, PlusIcon, EditIcon, TrashIcon, RocketIcon, CheckIcon, SparklesIcon } from './ui/Icons';
 
 interface DebateSetupProps {
   topic: string;
@@ -14,6 +15,13 @@ interface DebateSetupProps {
   onDeleteBranch: (branchId: string) => void;
 }
 
+const SUGGESTED_TOPICS = [
+  "Yapay zeka etiği ve insan iradesi",
+  "Kuantum bilgisayarların geleceği",
+  "Uzay madenciliği ve küresel ekonomi",
+  "Genetik mühendisliği ve insan ömrü"
+];
+
 const DebateSetup: React.FC<DebateSetupProps> = ({
   topic,
   setTopic,
@@ -27,167 +35,217 @@ const DebateSetup: React.FC<DebateSetupProps> = ({
   onDeleteBranch
 }) => {
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-        {/* Header Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
-          <div className="flex items-center space-x-3">
-            <div className="bg-white/20 rounded-full p-2">
-              <span className="text-2xl">🎯</span>
+    <div className="max-w-7xl mx-auto">
+      {/* Main Dual-Panel Command Center Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+        {/* LEFT PANEL: Command Deck & Control Console (5 Cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-[#FFEBD3] border-3 border-[#FFB6A6] rounded-3xl p-6 shadow-xl relative overflow-hidden">
+
+            {/* Topic Console Section */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 text-[#2C1A18]">
+                <IdeaIcon size={22} />
+                <h3 className="text-xl font-extrabold tracking-tight">Tartışma Konusu</h3>
+              </div>
+
+              <div className="relative">
+                <textarea
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="Tartışılmasını istediğiniz konuyu veya soruyu girin..."
+                  rows={4}
+                  className="w-full px-5 py-4 text-base border-2 border-[#FFB6A6] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#9BCEC1]/50 bg-[#FFEBD3] text-[#2C1A18] placeholder-[#5E3D38]/60 font-semibold resize-none shadow-xs transition-all leading-relaxed"
+                />
+                <div className="absolute right-4 bottom-4">
+                  <div className={`w-3.5 h-3.5 rounded-full ${topic.trim() ? 'bg-[#9BCEC1]' : 'bg-[#FFB6A6]/60'} transition-colors`} />
+                </div>
+              </div>
+
+              {/* Quick Topic Suggestion Chips */}
+              <div>
+                <div className="flex items-center space-x-1 mb-2 text-xs font-extrabold text-[#5E3D38]">
+                  <SparklesIcon size={14} />
+                  <span>Önerilen Konular:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {SUGGESTED_TOPICS.map((suggested, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setTopic(suggested)}
+                      className="text-xs bg-[#FFB6A6]/30 hover:bg-[#FFB6A6]/60 text-[#2C1A18] font-bold px-3 py-1.5 rounded-xl border border-[#FFB6A6] transition-all cursor-pointer text-left"
+                    >
+                      {suggested}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">
-                Tartışma Kurulumu
-              </h2>
-              <p className="text-blue-100 text-sm">
-                Konunuzu belirleyin ve uzmanları seçin
-              </p>
+
+            {/* Selection Summary Counter */}
+            <div className="mt-6 pt-6 border-t-2 border-[#FFB6A6]/40">
+              <div className="flex items-center justify-between bg-[#FFB6A6]/30 p-4 rounded-2xl border-2 border-[#FFB6A6]">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-[#9BCEC1] text-[#2C1A18] rounded-2xl flex items-center justify-center font-extrabold text-lg shadow-xs">
+                    {selectedBranches.length}
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[#2C1A18] text-sm">Seçilen Uzmanlar</h4>
+                    <p className="text-xs text-[#5E3D38] font-semibold">Hedef: Tam 4 Uzman</p>
+                  </div>
+                </div>
+                <span className={`text-xs font-extrabold px-3 py-1 rounded-xl ${selectedBranches.length === 4 ? 'bg-[#9BCEC1] text-[#2C1A18]' : 'bg-[#FFB6A6] text-[#2C1A18]'
+                  }`}>
+                  {selectedBranches.length === 4 ? 'Hazır ✓' : 'Eksik'}
+                </span>
+              </div>
+            </div>
+
+            {/* Huge Launch Button */}
+            <div className="mt-6">
+              <button
+                onClick={onStartDebate}
+                disabled={selectedBranches.length !== 4 || !topic.trim()}
+                className={`w-full py-5 px-8 text-xl font-extrabold rounded-2xl transition-all duration-300 transform shadow-lg ${selectedBranches.length === 4 && topic.trim()
+                  ? 'bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
+                  : 'bg-[#FFB6A6]/30 text-[#5E3D38]/50 cursor-not-allowed border-2 border-[#FFB6A6]/40'
+                  }`}
+              >
+                <div className="flex items-center justify-center space-x-3">
+                  <RocketIcon size={28} />
+                  <span>Tartışma Arenasını Başlat</span>
+                </div>
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="p-8 space-y-8">
-          {/* Topic Input Section */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <span className="text-lg">💭</span>
-              <label className="text-lg font-semibold text-gray-800">
-                Tartışma Konusu
-              </label>
-            </div>
-            <div className="relative">
-              <input
-                type="text"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="Örn: Yapay zeka teknolojisinin toplum üzerindeki etkisi"
-                className="w-full px-6 py-4 text-lg border-2 text-gray-200 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300 bg-black shadow-sm hover:shadow-md placeholder-gray-400"
-              />
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                <div className={`w-3 h-3 rounded-full ${topic.trim() ? 'bg-green-400' : 'bg-gray-300'} transition-colors`}></div>
-              </div>
-            </div>
-          </div>
+        {/* RIGHT PANEL: Expert Bento Grid Deck (7 Cols) */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="bg-[#FFEBD3] border-3 border-[#FFB6A6] rounded-3xl p-6 shadow-xl">
 
-          {/* Experts Selection Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">👥</span>
-                <label className="text-lg font-semibold text-gray-800">
-                  Uzmanlık Alanları
-                </label>
-                <button
-                  onClick={onShowAddBranchModal}
-                  className="ml-3 px-3 py-1 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded-full transition-colors flex items-center space-x-1"
-                >
-                  <span className="text-xs">➕</span>
-                  <span>Uzmanlık Alanı Ekle</span>
-                </button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  selectedBranches.length === 4 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {selectedBranches.length}/4 seçildi
+            {/* Section Title & Add Custom Button */}
+            <div className="flex items-center justify-between flex-wrap gap-4 mb-6 pb-4 border-b-2 border-[#FFB6A6]/40">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-[#9BCEC1] text-[#2C1A18] rounded-2xl flex items-center justify-center shadow-xs">
+                  <UsersIcon size={22} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-extrabold text-[#2C1A18] tracking-tight">
+                    Uzmanlık Kadrosu
+                  </h3>
+                  <p className="text-xs text-[#5E3D38] font-bold">
+                    Tartışacak 4 uzmana tıklayarak kadroyu oluşturun
+                  </p>
                 </div>
               </div>
+
+              <button
+                onClick={onShowAddBranchModal}
+                className="px-4 py-2.5 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-extrabold text-sm rounded-2xl transition-all shadow-xs flex items-center space-x-2 cursor-pointer"
+              >
+                <PlusIcon size={18} />
+                <span>Özel Uzmanlık Ekle</span>
+              </button>
             </div>
-            
-            <p className="text-gray-600 text-sm bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
-              4 farklı AI modeline rastgele atanacak uzmanlık alanlarını seçin
-            </p>
 
+            {/* Bento Grid layout for Expert cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {allBranches.map((branch: Branch) => (
-                <div
-                  key={branch.id}
-                  className={`group relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] ${
-                    selectedBranches.includes(branch.id)
-                      ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg'
-                      : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
-                  }`}
-                  onClick={() => onBranchSelection(branch.id)}
-                >
-                  {/* Selection indicator */}
-                  <div className={`absolute top-3 right-3 w-6 h-6 rounded-full border-2 transition-all ${
-                    selectedBranches.includes(branch.id)
-                      ? 'bg-blue-500 border-blue-500'
-                      : 'border-gray-300 group-hover:border-blue-400'
-                  }`}>
-                    {selectedBranches.includes(branch.id) && (
-                      <svg className="w-4 h-4 text-white absolute top-0.5 left-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
+              {allBranches.map((branch: Branch) => {
+                const selectedIndex = selectedBranches.indexOf(branch.id);
+                const isSelected = selectedIndex !== -1;
 
-                  <div className="pr-8">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-gray-900 text-base group-hover:text-blue-700 transition-colors">
-                        {branch.name}
-                      </h3>
+                return (
+                  <div
+                    key={branch.id}
+                    onClick={() => onBranchSelection(branch.id)}
+                    className={`relative p-5 rounded-3xl border-3 cursor-pointer transition-all duration-200 flex flex-col justify-between ${isSelected
+                      ? 'border-[#9BCEC1] bg-[#FFB6A6]/35 shadow-md scale-[1.02]'
+                      : 'border-[#FFB6A6]/60 bg-[#FFEBD3] hover:border-[#FFB6A6] hover:shadow-xs'
+                      }`}
+                  >
+                    {/* Header of card with selection order badge */}
+                    <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex items-center space-x-2">
-                        {customBranches.find(cb => cb.id === branch.id) && (
-                          <>
-                            <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
-                              Özel
-                            </span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditBranch(branch);
-                              }}
-                              className="text-blue-500 hover:text-blue-700 text-sm p-1"
-                              title="Düzenle"
-                            >
-                              ✏️
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm('Bu uzmanlık alanını silmek istediğinizden emin misiniz?')) {
-                                  onDeleteBranch(branch.id);
-                                }
-                              }}
-                              className="text-red-500 hover:text-red-700 text-sm p-1"
-                              title="Sil"
-                            >
-                              🗑️
-                            </button>
-                          </>
-                        )}
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-extrabold text-xs border-2 ${isSelected
+                          ? 'bg-[#9BCEC1] border-[#9BCEC1] text-[#2C1A18]'
+                          : 'bg-[#FFB6A6]/30 border-[#FFB6A6] text-[#5E3D38]'
+                          }`}>
+                          {isSelected ? `#${selectedIndex + 1}` : <CheckIcon size={14} />}
+                        </div>
+                        <h4 className="font-extrabold text-[#2C1A18] text-base leading-snug">
+                          {branch.name}
+                        </h4>
                       </div>
+
+                      {/* Custom branch edit/delete controls */}
+                      {customBranches.find(cb => cb.id === branch.id) && (
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditBranch(branch);
+                            }}
+                            className="text-[#2C1A18] hover:bg-[#FFB6A6]/50 p-1.5 rounded-xl transition-colors cursor-pointer"
+                            title="Düzenle"
+                          >
+                            <EditIcon size={15} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('Bu uzmanlık alanını silmek istediğinizden emin misiniz?')) {
+                                onDeleteBranch(branch.id);
+                              }
+                            }}
+                            className="text-[#2C1A18] hover:bg-[#FFB6A6]/50 p-1.5 rounded-xl transition-colors cursor-pointer"
+                            title="Sil"
+                          >
+                            <TrashIcon size={15} />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 leading-relaxed">
+
+                    <p className="text-xs text-[#5E3D38] leading-relaxed font-semibold mb-3">
                       {branch.description}
                     </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Start Button */}
-          <div className="pt-4">
-            <button
-              onClick={onStartDebate}
-              disabled={selectedBranches.length !== 4 || !topic.trim()}
-              className={`w-full py-4 px-8 text-lg font-bold rounded-2xl transition-all duration-300 transform ${
-                selectedBranches.length === 4 && topic.trim()
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <div className="flex items-center justify-center space-x-2">
-                <span className="text-xl">🚀</span>
-                <span>Tartışmayı Başlat</span>
+                    <div className="flex items-center justify-between pt-2 border-t border-[#FFB6A6]/30 text-[11px] font-bold">
+                      <span className={isSelected ? 'text-[#2C1A18]' : 'text-[#5E3D38]/70'}>
+                        {isSelected ? '✓ Kadroda Seçili' : '+ Kadroya Ekle'}
+                      </span>
+                      {customBranches.find(cb => cb.id === branch.id) && (
+                        <span className="bg-[#9BCEC1] text-[#2C1A18] px-2 py-0.5 rounded-lg">
+                          Özel Oluşturuldu
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Add Custom Branch Tile inside Bento Grid */}
+              <div
+                onClick={onShowAddBranchModal}
+                className="p-5 rounded-3xl border-3 border-dashed border-[#FFB6A6] bg-[#FFB6A6]/10 hover:bg-[#FFB6A6]/25 transition-all cursor-pointer flex flex-col items-center justify-center text-center space-y-2 min-h-[140px]"
+              >
+                <div className="w-10 h-10 bg-[#9BCEC1] text-[#2C1A18] rounded-2xl flex items-center justify-center shadow-xs">
+                  <PlusIcon size={22} />
+                </div>
+                <h4 className="font-extrabold text-[#2C1A18] text-sm">
+                  Yeni Uzmanlık Alanı Ekle
+                </h4>
+                <p className="text-xs text-[#5E3D38] font-semibold">
+                  Kendi tanımladığınız özel uzmanı tartışmaya katın
+                </p>
               </div>
-            </button>
+            </div>
+
           </div>
         </div>
+
       </div>
     </div>
   );

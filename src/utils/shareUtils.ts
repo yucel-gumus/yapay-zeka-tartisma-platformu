@@ -1,34 +1,8 @@
-import { ChatMessageType } from '@/hooks/useDebateLogic';
-import { Branch } from '@/hooks/useBranchManagement';
+import { SharedDebateData } from '@/types/debate';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 
-export interface SharedDebateData {
-  topic: string;
-  chatHistory: ChatMessageType[];
-  selectedBranches: string[];
-  branchDetails: Branch[];
-  finalVerdict: string;
-  timestamp: number;
-}
-
-export const encodeDebateData = (data: SharedDebateData): string => {
-  try {
-    const jsonString = JSON.stringify(data);
-    return btoa(encodeURIComponent(jsonString));
-  } catch {
-    return '';
-  }
-};
-
-export const decodeDebateData = (encodedData: string): SharedDebateData | null => {
-  try {
-    const jsonString = decodeURIComponent(atob(encodedData));
-    return JSON.parse(jsonString);
-  } catch {
-    return null;
-  }
-};
+export type { SharedDebateData };
 
 export const generateShortId = (): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -93,19 +67,8 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
       return true;
-    } else {
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      const result = document.execCommand('copy');
-      document.body.removeChild(textArea);
-      return result;
     }
+    return false;
   } catch {
     return false;
   }
