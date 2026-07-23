@@ -34,20 +34,21 @@ export async function POST(request: NextRequest) {
       }),
     });
 
-    if (!upstream.ok || !upstream.body) {
+    if (!upstream.ok) {
       const detail = await upstream.text().catch(() => '');
       return new Response(detail || 'Gateway debate turn failed', {
         status: upstream.status || 502,
       });
     }
 
-    return new Response(upstream.body, {
+    const text = await upstream.text();
+    return new Response(text, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
       },
     });
-  } catch {
-    return new Response('Internal server error', { status: 500 });
+  } catch (err: any) {
+    return new Response(err?.message || 'Internal server error', { status: 500 });
   }
 }
