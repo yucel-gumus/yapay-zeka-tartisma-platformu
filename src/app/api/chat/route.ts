@@ -45,12 +45,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    let text = '';
+    const rawText = await upstream.text();
+    let text = rawText;
     try {
-      const data = await upstream.json();
-      text = typeof data === 'string' ? data : data?.text || JSON.stringify(data);
+      const data = JSON.parse(rawText);
+      text = typeof data === 'string' ? data : data?.text || rawText;
     } catch {
-      text = await upstream.text().catch(() => '');
+      text = rawText;
     }
 
     return new Response(text, {
