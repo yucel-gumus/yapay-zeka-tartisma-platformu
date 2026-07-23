@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         'Cache-Control': 'no-cache',
       },
     });
-  } catch (err: any) {
-    return new Response(err?.message || 'Internal server error', { status: 500 });
+  } catch {
+    return new Response('Internal server error', { status: 500 });
   }
 }
