@@ -41,11 +41,28 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return new Response(upstream.body, {
+    const upstreamBody = upstream.body;
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = upstreamBody.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } catch (e) {
+          controller.error(e);
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
+        'Cache-Control': 'no-cache, no-transform',
       },
     });
   } catch {
