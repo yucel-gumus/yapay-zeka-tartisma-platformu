@@ -22,13 +22,15 @@ export async function POST(request: NextRequest) {
           name: personaDescription.name,
           description: personaDescription.description,
         },
-        chat_history: (chatHistory || []).map(
-          (msg: { role: string; content: string; branchName?: string }) => ({
-            role: msg.role,
-            content: msg.content,
-            branch_name: msg.branchName ?? null,
-          })
-        ),
+        chat_history: (chatHistory || [])
+          .filter((msg: { role?: string; content?: string }) => msg && typeof msg.content === 'string' && msg.content.trim().length > 0)
+          .map(
+            (msg: { role: string; content: string; branchName?: string }) => ({
+              role: msg.role,
+              content: msg.content.trim(),
+              branch_name: msg.branchName ?? null,
+            })
+          ),
       }),
     });
 
