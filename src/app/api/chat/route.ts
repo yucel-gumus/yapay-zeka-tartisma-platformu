@@ -45,7 +45,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const text = await upstream.text();
+    let text = '';
+    try {
+      const data = await upstream.json();
+      text = typeof data === 'string' ? data : data?.text || JSON.stringify(data);
+    } catch {
+      text = await upstream.text().catch(() => '');
+    }
+
     return new Response(text, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
