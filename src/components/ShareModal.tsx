@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { SharedDebateData, generateShareableLink, copyToClipboard } from '@/utils/shareUtils';
 import { Modal } from './ui/Modal';
-import { ShareIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon, WhatsAppIcon, TelegramIcon } from './ui/Icons';
+import { ShareIcon, CopyIcon, CheckIcon, TwitterIcon, LinkedInIcon, WhatsAppIcon, TelegramIcon, IdeaIcon } from './ui/Icons';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -115,7 +115,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, debateData }) 
         ) : (
           <div className="bg-[#FFB6A6]/40 border-2 border-[#FFB6A6] rounded-2xl p-4">
             <p className="text-[#2C1A18] text-sm font-extrabold">
-              ❌ Hata: Link oluşturulamadı. Firebase bağlantısını kontrol edin.
+              Hata: Link oluşturulamadı. Firebase bağlantısını kontrol edin.
             </p>
             <button
               onClick={() => window.location.reload()}
@@ -162,8 +162,9 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, debateData }) 
       </div>
 
       <div className="bg-[#FFB6A6]/20 border-2 border-[#FFB6A6] rounded-2xl p-4">
-        <p className="text-xs text-[#5E3D38] font-semibold">
-          💡 Not: Bu link tartışmanın tam kopyasını içerir ve herkes tarafından görüntülenebilir.
+        <p className="text-xs text-[#5E3D38] font-semibold flex items-center gap-1.5">
+          <IdeaIcon size={16} className="shrink-0 text-[#2C1A18]" />
+          <span>Not: Bu link tartışmanın tam kopyasını içerir ve herkes tarafından görüntülenebilir.</span>
         </p>
       </div>
     </Modal>

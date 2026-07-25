@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal } from './ui/Modal';
-import { PlusIcon, SparklesIcon } from './ui/Icons';
+import { PlusIcon, SparklesIcon, IdeaIcon } from './ui/Icons';
 
 interface AddBranchModalProps {
   showModal: boolean;
@@ -93,7 +93,7 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
           />
           <div className="flex items-center justify-between mt-2 text-xs font-bold text-[#5E3D38]">
             <span className="flex items-center space-x-1">
-              <span>💡</span>
+              <IdeaIcon size={14} className="text-[#2C1A18]" />
               <span>Detaylı açıklama daha iyi tartışmalar sağlar</span>
             </span>
             <span className={newBranchDescription.length > 100 ? 'text-[#2C1A18]' : 'text-[#5E3D38]'}>
