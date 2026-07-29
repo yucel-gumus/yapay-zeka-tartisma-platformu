@@ -29,7 +29,7 @@ const JudgePopup: React.FC<JudgePopupProps> = ({
             <div className="animate-spin rounded-full h-14 w-14 border-b-4 border-[#9BCEC1] border-t-transparent"></div>
             <div>
               <p className="text-[#2C1A18] font-extrabold text-xl">Hakem kararı değerlendiriliyor...</p>
-              <p className="text-sm text-[#5E3D38] font-semibold mt-1">4 uzmanın sunduğu tüm argümanlar çapraz analiz ediliyor</p>
+              <p className="text-sm text-[#5E3D38] font-semibold mt-1">Seçilen tüm uzmanların sunduğu argümanlar çapraz analiz ediliyor</p>
             </div>
           </div>
         ) : (

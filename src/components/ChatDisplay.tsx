@@ -37,7 +37,7 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
   chatEndRef
 }) => {
   const branchOrderList = activeBranchOrder.length > 0 ? activeBranchOrder : selectedBranches;
-  const currentBranchId = branchOrderList[currentTurn % 4];
+  const currentBranchId = branchOrderList[currentTurn % (branchOrderList.length || 1)];
 
   // Map 4 active expert details
   const active4Experts = branchOrderList.map(id => allBranches.find(b => b.id === id)).filter((b): b is Branch => b !== undefined);
