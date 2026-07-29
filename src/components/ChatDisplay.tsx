@@ -39,8 +39,14 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
   const branchOrderList = activeBranchOrder.length > 0 ? activeBranchOrder : selectedBranches;
   const currentBranchId = branchOrderList[currentTurn % (branchOrderList.length || 1)];
 
-  // Map 4 active expert details
-  const active4Experts = branchOrderList.map(id => allBranches.find(b => b.id === id)).filter((b): b is Branch => b !== undefined);
+  // Map active expert details
+  const activeExperts = branchOrderList.map(id => allBranches.find(b => b.id === id)).filter((b): b is Branch => b !== undefined);
+
+  const gridColsClass = activeExperts.length === 2 
+    ? 'grid-cols-1 sm:grid-cols-2' 
+    : activeExperts.length === 3 
+    ? 'grid-cols-1 sm:grid-cols-3' 
+    : 'grid-cols-2 lg:grid-cols-4';
 
   return (
     <div className="min-h-screen bg-[#FFEBD3] space-y-6">
@@ -57,9 +63,9 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
           </div>
         </div>
 
-        {/* 4 Expert Cards Deck on Podium */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {active4Experts.map((expert, idx) => {
+        {/* Expert Cards Deck on Podium */}
+        <div className={`grid ${gridColsClass} gap-4`}>
+          {activeExperts.map((expert, idx) => {
             const isSpeakingNow = isDebating && currentBranchId === expert.id;
             return (
               <div
@@ -233,7 +239,7 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
                       Tartışma Tamamlandı!
                     </h3>
                     <p className="text-sm text-[#5E3D38] font-bold">
-                      Tüm 4 uzman 12 turluk konuşmayı bitirdi
+                      Tüm {activeExperts.length} uzman 12 turluk konuşmayı bitirdi
                     </p>
                   </div>
                 </div>
