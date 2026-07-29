@@ -25,7 +25,7 @@ export const useDebateLogic = () => {
     setSelectedBranches((prev: string[]) => {
       if (prev.includes(branchId)) {
         return prev.filter((id: string) => id !== branchId);
-      } else if (prev.length < DEBATE_CONFIG.REQUIRED_EXPERTS) {
+      } else if (prev.length < DEBATE_CONFIG.MAX_EXPERTS) {
         return [...prev, branchId];
       }
       return prev;
@@ -50,7 +50,7 @@ export const useDebateLogic = () => {
   ) => {
     if (turnIndex >= DEBATE_CONFIG.TOTAL_TURNS) return;
 
-    const branchIndex = turnIndex % DEBATE_CONFIG.REQUIRED_EXPERTS;
+    const branchIndex = turnIndex % branchOrder.length;
     const branchId = branchOrder[branchIndex];
     const selectedBranch = allBranches.find((b) => b.id === branchId);
 
@@ -189,7 +189,11 @@ export const useDebateLogic = () => {
   }, [topic]);
 
   const startDebate = (allBranches: Branch[]) => {
-    if (selectedBranches.length !== DEBATE_CONFIG.REQUIRED_EXPERTS || !topic.trim()) return;
+    if (
+      selectedBranches.length < DEBATE_CONFIG.MIN_EXPERTS ||
+      selectedBranches.length > DEBATE_CONFIG.MAX_EXPERTS ||
+      !topic.trim()
+    ) return;
 
     const shuffledBranchOrder = shuffleArray([...selectedBranches]);
     setActiveBranchOrder(shuffledBranchOrder);

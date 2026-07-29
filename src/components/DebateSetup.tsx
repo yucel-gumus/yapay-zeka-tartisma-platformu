@@ -92,12 +92,12 @@ const DebateSetup: React.FC<DebateSetupProps> = ({
                   </div>
                   <div>
                     <h4 className="font-extrabold text-[#2C1A18] text-sm">Seçilen Uzmanlar</h4>
-                    <p className="text-xs text-[#5E3D38] font-semibold">Hedef: Tam 4 Uzman</p>
+                    <p className="text-xs text-[#5E3D38] font-semibold">Hedef: 2, 3 veya 4 Uzman</p>
                   </div>
                 </div>
-                <span className={`text-xs font-extrabold px-3 py-1 rounded-xl ${selectedBranches.length === 4 ? 'bg-[#9BCEC1] text-[#2C1A18]' : 'bg-[#FFB6A6] text-[#2C1A18]'
+                <span className={`text-xs font-extrabold px-3 py-1 rounded-xl ${selectedBranches.length >= 2 && selectedBranches.length <= 4 ? 'bg-[#9BCEC1] text-[#2C1A18]' : 'bg-[#FFB6A6] text-[#2C1A18]'
                   }`}>
-                  {selectedBranches.length === 4 ? 'Hazır ✓' : 'Eksik'}
+                  {selectedBranches.length >= 2 && selectedBranches.length <= 4 ? 'Hazır ✓' : `${selectedBranches.length}/4 Uzman`}
                 </span>
               </div>
             </div>
@@ -106,8 +106,8 @@ const DebateSetup: React.FC<DebateSetupProps> = ({
             <div className="mt-6">
               <button
                 onClick={onStartDebate}
-                disabled={selectedBranches.length !== 4 || !topic.trim()}
-                className={`w-full py-5 px-8 text-xl font-extrabold rounded-2xl transition-all duration-300 transform shadow-lg ${selectedBranches.length === 4 && topic.trim()
+                disabled={selectedBranches.length < 2 || selectedBranches.length > 4 || !topic.trim()}
+                className={`w-full py-5 px-8 text-xl font-extrabold rounded-2xl transition-all duration-300 transform shadow-lg ${selectedBranches.length >= 2 && selectedBranches.length <= 4 && topic.trim()
                   ? 'bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
                   : 'bg-[#FFB6A6]/30 text-[#5E3D38]/50 cursor-not-allowed border-2 border-[#FFB6A6]/40'
                   }`}
@@ -136,7 +136,7 @@ const DebateSetup: React.FC<DebateSetupProps> = ({
                     Uzmanlık Kadrosu
                   </h3>
                   <p className="text-xs text-[#5E3D38] font-bold">
-                    Tartışacak 4 uzmana tıklayarak kadroyu oluşturun
+                    Tartışacak 2, 3 veya 4 uzmana tıklayarak kadroyu oluşturun
                   </p>
                 </div>
               </div>
