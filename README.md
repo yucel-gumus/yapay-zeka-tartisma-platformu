@@ -1,94 +1,147 @@
-# 🎭 Yapay Zeka Tartışma Platformu (AI Debate Platform)
+# 🎭 Yapay Zeka Tartışma Platformu - Multi-Agent AI Debate & Evaluation System
 
-Bu proje, farklı uzmanlık alanlarına sahip yapay zeka ajanlarının (Gemini AI) belirli bir konu üzerinde gerçek zamanlı olarak tartıştığı ve sürecin sonunda daha güçlü bir "Hakem Ajan" tarafından değerlendirilip karara bağlandığı interaktif ve çok sesli bir tartışma simülasyonu platformudur. 
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Next.js 15](https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Firebase Firestore](https://img.shields.io/badge/Firebase-Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![Google Gemini](https://img.shields.io/badge/Google_Gemini-Multi--Agent_AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-yucelgumus.dev-2563EB?style=for-the-badge&logo=google-chrome&logoColor=white)](https://www.yucelgumus.dev/)
 
-Proje, tartışma oturumlarının kaydedilmesi ve paylaşılabilmesi için **Firebase Firestore** entegrasyonuna sahiptir.
+> Farklı uzmanlık alanlarına ve bakış açılarına sahip yapay zeka ajanlarının (Felsefe, Bilim, Etik, Teknoloji, Ekonomi vb.) belirlenen bir tez veya konu üzerinde gerçek zamanlı olarak tartıştığı; sürecin sonunda tarafsız bir **Hakem Ajan (Judge Agent)** tarafından argümanların puanlanıp karara bağlandığı çoklu ajan (Multi-Agent) simülasyon ve paylaşım platformu.
 
 ---
 
 ## 🌟 Öne Çıkan Özellikler
 
-### 🎯 **Çoklu Ajan Tartışma Mimarisi**
-* **4 Farklı Uzman Ajan:** Tartışmaya katılan 4 yapay zeka ajanı, kendi uzmanlık profillerine göre argümanlar üretir (Örn: Astrofizik Profesörü, Soyut Matematikçi, Teorik Fizikçi, İslam İlimleri Uzmanı vb.).
-* **Dinamik Tur Sistemi (12 Tur):** Ajanlar sırayla konuşur ve bir önceki konuşmacının argümanlarını çürütmeye veya kendi fikirlerini güçlendirmeye çalışır.
-* **Canlı Yanıt Akışı (Streaming):** Yanıtlar kullanıcıya kelime kelime gerçek zamanlı olarak akar.
-* **Hakem Kararı (Decision Maker):** Tartışmanın sonunda 5. ve en güçlü model olan bir **Hakem Ajan (Gemini 2.5 Pro)** devreye girerek tartışmayı özetler, kazanan argümanı açıklar ve nihai kararı verir.
-
-### ⚡ **Özelleştirilmiş Uzman Yönetimi**
-* **Kendi Uzmanını Yarat:** Sisteme yeni uzmanlık alanları ekleyebilir, bunları düzenleyebilir ve silebilirsiniz.
-* **AI Destekli Profil Oluşturma:** Yeni bir uzman eklerken, yapay zeka otomatik olarak o uzman için uygun bir biyografi ve yaklaşım stili tasarlar.
-* **Kalıcı Yerel Depolama:** Eklediğiniz özel uzmanlar `localStorage` üzerinde saklanır.
-
-### 🔗 **Firebase & Paylaşım Altyapısı**
-* **Paylaşılabilir Tartışma Linkleri:** Tamamlanan tartışmaları **Firebase Firestore** üzerine tek tıkla kaydedebilirsiniz.
-* **Dinamik Oturum Yükleme (`/d/[id]`):** Sistem size benzersiz bir paylaşım linki oluşturur. Bu linki alan diğer kullanıcılar, tartışmanın tüm turlarını ve hakem kararını birebir olarak görüntüleyebilir.
+- 🤖 **Çoklu Ajan Tartışma Simülasyonu (Multi-Agent Debate):** Kullanıcının belirlediği konu üzerinde en az iki farklı uzman ajanın sırayla argüman ve antitez üretmesini sağlar (`useDebateLogic.ts`).
+- ⚖️ **Tarafsız Hakem Ajanı (Judge Agent):** Tartışma tamamlandığında argümanların mantıksal tutarlılığını, kanıt gücünü ve ikna ediciliğini değerlendirerek kazananı ve ayrıntılı gerekçeli kararı açıklar (`JudgePopup.tsx`, `/api/judge`).
+- 🌐 **Paylaşılabilir Tartışma Bağlantıları (Shareable URLs):** Tamamlanan oturumları **Firebase Firestore** üzerinde saklayarak `/d/[id]` dinamik rotası üzerinden herkese açık paylaşabilme (`ShareModal.tsx`).
+- 🌿 **Özelleştirilebilir Branş & Perspektif Yönetimi:** Kullanıcının tartışmaya yeni uzmanlık dalları veya özel kişilik profilleri ekleyebilmesi (`branches.json`, `AddBranchModal.tsx`).
+- ✨ **Yapay Zeka Destekli Konu & Açıklama Üretimi:** Tek tıkla ilgi çekici ve düşündürücü tartışma konuları öneren yardımcı ajan (`/api/generate-description`).
 
 ---
 
-## 🛠️ Teknoloji Stack
+## 🏗️ Mimari & Çoklu Ajan Karar Döngüsü
 
-* **Frontend:** Next.js 15 (Turbopack), React 19, TypeScript.
-* **Tasarım & UI/UX:** TailwindCSS v4, Glassmorphism blur efektleri, Gradient animasyonlar.
-* **Veritabanı & Paylaşım:** Firebase 12 (Firestore Client SDK).
-* **Yapay Zeka:** Google Gemini API (Gemini 2.5/2.0 Flash ve Gemini 2.5 Pro).
-* **Durum & Akış Yönetimi:** Custom React Hooks (`useDebateLogic`, `useBranchManagement`).
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Kullanıcı
+    participant UI as Next.js Arayüzü
+    participant AgentA as Taraf Ajan (Tez)
+    participant AgentB as Karşıt Ajan (Antitez)
+    participant Judge as Hakem Ajan (Değerlendirme)
+    participant DB as Firebase Firestore
 
----
-
-## 📂 Proje Yapısı
-
-```
-src/
-├── app/
-│   ├── api/
-│   │   ├── chat/route.ts          # Uzman ajanların promptlarını yöneten API geçidi
-│   │   ├── judge/route.ts         # Hakem kararlarını yöneten API
-│   │   └── generate-description/  # Yeni uzman profilleri için AI açıklama üreteci
-│   ├── d/[id]/                    # Firebase üzerinden paylaşılan tartışmaların yüklendiği dinamik sayfa
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx                 # Ana tartışma kurulum ve izleme sayfası
-├── components/                  # AddBranchModal, ChatDisplay, ChatMessage, ShareModal, JudgePopup
-├── hooks/                       # Tartışma mantığı ve uzman yönetimi state kancaları
-├── lib/                         # Firebase istemcisi ve Gemini istemcisi konfigürasyonları
-└── utils/                       # shareUtils.ts (Firebase veri kaydetme/yükleme araçları)
+    User->>UI: Konu & Branşları Seçer ve Başlatır
+    loop Tartışma Turları (Rounds)
+        UI->>AgentA: Argümanını Sun
+        AgentA-->>UI: Argüman Metni & Gerekçeler
+        UI->>AgentB: Önceki Argümana Cevap Ver
+        AgentB-->>UI: Karşı Argüman & Örnekler
+    end
+    UI->>Judge: Tüm Tartışma Geçmişini Analiz Et
+    Judge-->>UI: Puan Tablosu, Analiz Raporu ve Kazanan
+    UI->>DB: Oturumu Kaydet (/d/[id])
 ```
 
 ---
 
-## 🚀 Kurulum ve Çalıştırma
+## 🛠️ Teknoloji Yığını
 
-### 1. Bağımlılıkları Yükleyin
+| Kategori | Teknoloji / Kütüphane | Açıklama |
+| :--- | :--- | :--- |
+| **Framework & UI** | Next.js 15 (App Router) + React 19 | Modern ve reaktif web altyapısı |
+| **Yapay Zeka** | Google Gemini 1.5 Pro / Flash | Çoklu ajan karakterleri ve hakem mantığı |
+| **Veritabanı** | Firebase Firestore | Tartışma geçmişlerinin saklanması ve paylaşımı |
+| **Stil & Tasarım** | Tailwind CSS + Lucide Icons | Canlı mesaj balonları ve şık modallar |
+
+---
+
+## 🚀 Hızlı Başlangıç
+
+### Gereksinimler
+- **Node.js**: v18.18+ veya v20+
+- **Google Gemini API Key**
+- **Firebase Projesi Yapılandırması**
+
+### Kurulum
+
 ```bash
 git clone https://github.com/yucel-gumus/yapay-zeka-tartisma-platformu.git
 cd yapay-zeka-tartisma-platformu
+
 npm install
 ```
 
-### 2. Ortam Değişkenleri (`.env.local`)
-Projenin çalışması için Gemini ve Firebase anahtarlarını tanımlamanız gerekir. Kök dizinde `.env.local` oluşturun:
+### Ortam Değişkenleri (`.env.local`)
 
 ```env
-# Google Gemini API Key
-NEXT_PUBLIC_GEMINI_API_KEY=AIzaSy...your_gemini_key
-
-# Firebase Web App Config
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...your_firebase_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=project-id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=project-id.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=sender-id
-NEXT_PUBLIC_FIREBASE_APP_ID=app-id
+GEMINI_API_KEY=your_gemini_api_key
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### 3. Geliştirme Modunda Çalıştırma
+### Çalıştırma
+
 ```bash
 npm run dev
 ```
-Uygulama `http://localhost:3000` adresinde başlayacaktır.
+
+Uygulamaya `http://localhost:3000` adresinden erişebilirsiniz.
 
 ---
 
-## 🔗 Canlı Bağlantılar
-* **Canlı Demo:** [https://yapay-zeka-tartisma-platformu.vercel.app/](https://yapay-zeka-tartisma-platformu.vercel.app/)
-* **Geliştirici LinkedIn:** [https://linkedin.com/in/yucel-gumus](https://linkedin.com/in/yucel-gumus)
+## 📂 Proje Dizin Yapısı
+
+```
+yapay-zeka-tartisma-platformu/
+├── package.json
+├── tailwind.config.ts
+├── next.config.ts
+└── src/
+    ├── app/
+    │   ├── page.tsx                    # Ana tartışma oluşturma ekranı
+    │   ├── d/[id]/page.tsx             # Paylaşılan tartışma detay sayfası
+    │   └── api/
+    │       ├── chat/route.ts           # Ajan konuşma API'si
+    │       ├── judge/route.ts          # Hakem değerlendirme API'si
+    │       └── generate-description/   # Konu öneri API'si
+    ├── components/
+    │   ├── DebateSetup.tsx             # Konu ve ajan seçici panel
+    │   ├── ChatDisplay.tsx             # Canlı tartışma akışı
+    │   ├── ChatMessage.tsx             # Ajan mesaj kutusu
+    │   ├── JudgePopup.tsx              # Hakem karar kartı
+    │   └── ShareModal.tsx              # Paylaşım bağlantı modali
+    ├── hooks/
+    │   ├── useDebateLogic.ts           # Tartışma tur yönetimi
+    │   └── useBranchManagement.ts     # Branş ve uzmanlık yönetimi
+    └── lib/
+        ├── firebase.ts                 # Firestore entegrasyonu
+        └── gateway.ts                  # Gemini API yönlendirici
+```
+
+---
+
+## 📄 Lisans
+Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
+
+---
+
+## 👨‍💻 Geliştirici & İletişim
+
+**Yücel Gümüş** - Full Stack Developer
+
+- 🌐 **Web Sitesi / Portfolyo:** [yucelgumus.dev](https://www.yucelgumus.dev/)
+- 💼 **LinkedIn:** [linkedin.com/in/yucel-gumus](https://www.linkedin.com/in/yucel-gumus/)
+- 🐙 **GitHub:** [@yucel-gumus](https://github.com/yucel-gumus)
+
+<p align="left">
+  <a href="https://www.yucelgumus.dev/" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/Developed%20by-Yücel%20Gümüş-blue?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Yücel Gümüş Portfolio" />
+  </a>
+</p>
