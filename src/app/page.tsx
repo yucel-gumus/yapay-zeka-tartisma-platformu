@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import Link from "next/link";
+import React, { useMemo } from "react";
 import branchesData from "@/data/branches.json";
 import { useDebateLogic } from "@/hooks/useDebateLogic";
 import { useBranchManagement } from "@/hooks/useBranchManagement";
@@ -23,14 +24,6 @@ export default function Home() {
     [branchManagement.customBranches],
   );
 
-  useEffect(() => {
-    debateLogic.chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [
-    debateLogic.chatHistory,
-    debateLogic.currentStreamingContent,
-    debateLogic.chatEndRef,
-  ]);
-
   const { generateShareData } = debateLogic;
   const shareData = useMemo(
     () => generateShareData(allBranches),
@@ -38,24 +31,22 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FFEBD3] py-6 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* MINIMAL HEADER BAR */}
-        <header className="flex items-center justify-between py-3 px-5 bg-[#FFEBD3] border-2 border-[#FFB6A6] rounded-2xl shadow-xs">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-[#9BCEC1] text-[#2C1A18] rounded-xl shadow-xs">
+    <div className="app-shell">
+      <div className="app-content space-y-6">
+        <header className="app-header">
+          <Link href="/" className="brand">
+            <span className="brand-symbol">
               <RobotIcon size={22} />
-            </div>
-            <div>
-              <h1 className="text-lg font-extrabold text-[#2C1A18] tracking-tight leading-tight">
-                Yapay Zeka Tartışma Platformu
-              </h1>
-              <p className="text-xs text-[#5E3D38] font-semibold">
-                Farklı bakış açılarıyla argümanları, varsayımları ve kanıtları
-                inceleyin
-              </p>
-            </div>
-          </div>
+            </span>
+            <span>
+              Yapay Zeka
+              <span className="brand-subtitle">Tartışma Platformu</span>
+            </span>
+          </Link>
+          <span className="header-note">
+            <span className="status-dot" />
+            Fikirler karşılaşır. Bakış açın genişler.
+          </span>
         </header>
 
         {!debateLogic.ready && (
@@ -130,10 +121,6 @@ export default function Home() {
             chatEndRef={debateLogic.chatEndRef}
           />
         )}
-
-        <footer className="text-center text-[#5E3D38] text-sm font-semibold border-t-2 border-[#FFB6A6]/40 pt-6">
-          <p>Powered by Google Gemini AI • Next.js • Tailwind CSS</p>
-        </footer>
 
         {/* MODALS */}
         <JudgePopup

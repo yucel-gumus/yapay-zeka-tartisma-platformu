@@ -114,8 +114,8 @@ const ShareModal: React.FC<ShareModalProps> = ({
       maxWidthClass="max-w-md"
     >
       <div className="mb-6 space-y-4">
-        <div className="bg-[#FFB6A6]/30 rounded-2xl p-4 border-2 border-[#FFB6A6]">
-          <h3 className="font-extrabold text-[#2C1A18] text-base mb-1">
+        <div className="bg-[#FFB6A6]/30 rounded-xl p-4 border border-[#FFB6A6]">
+          <h3 className="font-semibold text-[#2C1A18] text-base mb-1">
             {debateData.topic}
           </h3>
           <p className="text-sm font-semibold text-[#5E3D38]">
@@ -127,25 +127,29 @@ const ShareModal: React.FC<ShareModalProps> = ({
         {loading ? (
           <div className="flex items-center justify-center py-4">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#9BCEC1]"></div>
-            <span className="ml-3 font-extrabold text-[#2C1A18]">
-              Firebase&apos;e kaydediliyor...
+            <span className="ml-3 font-semibold text-[#2C1A18]">
+              Paylaşım bağlantısı hazırlanıyor…
             </span>
           </div>
         ) : shareLink ? (
           <div>
-            <label className="block text-sm font-extrabold text-[#2C1A18] mb-2">
+            <label
+              htmlFor="share-link"
+              className="block text-sm font-semibold text-[#2C1A18] mb-2"
+            >
               Paylaşım Linki:
             </label>
             <div className="flex gap-2">
               <input
+                id="share-link"
                 type="text"
                 value={shareLink}
                 readOnly
-                className="flex-1 px-4 py-3 border-2 border-[#FFB6A6] bg-[#FFEBD3] text-[#2C1A18] font-bold rounded-2xl text-sm focus:outline-none"
+                className="field min-w-0 flex-1"
               />
               <button
                 onClick={handleCopyLink}
-                className="px-5 py-3 rounded-2xl font-extrabold transition-all shadow-xs cursor-pointer bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] flex items-center gap-1.5"
+                className="px-5 py-3 rounded-xl font-semibold transition-all  cursor-pointer bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] flex items-center gap-1.5"
               >
                 {copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}
                 <span>{copied ? "Kopyalandı" : "Kopyala"}</span>
@@ -153,13 +157,13 @@ const ShareModal: React.FC<ShareModalProps> = ({
             </div>
           </div>
         ) : (
-          <div className="bg-[#FFB6A6]/40 border-2 border-[#FFB6A6] rounded-2xl p-4">
-            <p className="text-[#2C1A18] text-sm font-extrabold">
+          <div className="bg-[#FFB6A6]/40 border border-[#FFB6A6] rounded-xl p-4">
+            <p className="text-[#2C1A18] text-sm font-semibold">
               {error || "Paylaşım bağlantısı oluşturulamadı."}
             </p>
             <button
               onClick={() => setRetry((value) => value + 1)}
-              className="mt-2 text-[#2C1A18] font-extrabold text-sm underline cursor-pointer"
+              className="mt-2 text-[#2C1A18] font-semibold text-sm underline cursor-pointer"
             >
               Tekrar dene
             </button>
@@ -168,14 +172,14 @@ const ShareModal: React.FC<ShareModalProps> = ({
       </div>
 
       <div className="mb-6">
-        <h4 className="font-extrabold text-[#2C1A18] mb-3">
+        <h4 className="font-semibold text-[#2C1A18] mb-3">
           Sosyal Medyada Paylaş:
         </h4>
         <div className="grid grid-cols-2 gap-3">
           <button
             disabled={!shareLink || loading}
             onClick={() => handleSocialShare("twitter")}
-            className="flex items-center justify-center gap-2 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-extrabold py-3 px-4 rounded-2xl transition-all shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold py-3 px-4 rounded-xl transition-all  cursor-pointer"
           >
             <TwitterIcon size={18} />
             <span>X / Twitter</span>
@@ -183,7 +187,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
           <button
             disabled={!shareLink || loading}
             onClick={() => handleSocialShare("linkedin")}
-            className="flex items-center justify-center gap-2 bg-[#FFB6A6] hover:bg-[#f0a595] text-[#2C1A18] font-extrabold py-3 px-4 rounded-2xl transition-all shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 bg-[#FFB6A6] hover:bg-[#f0a595] text-[#2C1A18] font-semibold py-3 px-4 rounded-xl transition-all  cursor-pointer"
           >
             <LinkedInIcon size={18} />
             <span>LinkedIn</span>
@@ -191,7 +195,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
           <button
             disabled={!shareLink || loading}
             onClick={() => handleSocialShare("whatsapp")}
-            className="flex items-center justify-center gap-2 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-extrabold py-3 px-4 rounded-2xl transition-all shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold py-3 px-4 rounded-xl transition-all  cursor-pointer"
           >
             <WhatsAppIcon size={18} />
             <span>WhatsApp</span>
@@ -199,7 +203,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
           <button
             disabled={!shareLink || loading}
             onClick={() => handleSocialShare("telegram")}
-            className="flex items-center justify-center gap-2 bg-[#FFB6A6] hover:bg-[#f0a595] text-[#2C1A18] font-extrabold py-3 px-4 rounded-2xl transition-all shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 bg-[#FFB6A6] hover:bg-[#f0a595] text-[#2C1A18] font-semibold py-3 px-4 rounded-xl transition-all  cursor-pointer"
           >
             <TelegramIcon size={18} />
             <span>Telegram</span>
@@ -207,7 +211,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
         </div>
       </div>
 
-      <div className="bg-[#FFB6A6]/20 border-2 border-[#FFB6A6] rounded-2xl p-4">
+      <div className="bg-[#FFB6A6]/20 border border-[#FFB6A6] rounded-xl p-4">
         <p className="text-xs text-[#5E3D38] font-semibold flex items-center gap-1.5">
           <IdeaIcon size={16} className="shrink-0 text-[#2C1A18]" />
           <span>

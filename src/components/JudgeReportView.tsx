@@ -2,72 +2,68 @@ import type { JudgeReport } from "@/types/debate";
 import { DECISION_LABELS } from "@/lib/debateProtocol";
 export default function JudgeReportView({ report }: { report: JudgeReport }) {
   return (
-    <div className="space-y-5 text-[#2C1A18]">
+    <div className="space-y-6 text-[#2C1A18]">
       {report.decision && (
-        <section className="rounded-xl border-2 border-[#5E8C7F] bg-[#9BCEC1]/25 p-4 sm:p-5">
-          <h3 className="font-semibold">Nihai hakem hükmü</h3>
-          <p className="mt-2 text-sm font-semibold text-[#36594F]">
-            {DECISION_LABELS[report.decision.outcome]}
-          </p>
-          <p className="mt-2 whitespace-pre-wrap text-lg font-semibold leading-relaxed break-words">
+        <section className="report-decision">
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="eyebrow">NİHAİ HAKEM HÜKMÜ</h3>
+            <span className="pill bg-[#9BCEC1]/60">
+              {DECISION_LABELS[report.decision.outcome]}
+            </span>
+          </div>
+          <p className="mt-4 text-lg sm:text-xl font-semibold leading-relaxed whitespace-pre-wrap break-words">
             {report.decision.ruling}
           </p>
-          <p className="mt-3 text-sm font-semibold break-words">
-            Argüman üstünlüğü: {report.decision.winner || "Belirgin üstünlük yok"}
+          <p className="mt-4 text-xs font-semibold">
+            Argüman üstünlüğü:{" "}
+            {report.decision.winner || "Belirgin üstünlük yok"}
           </p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed break-words">
+          <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words">
             {report.decision.rationale}
           </p>
         </section>
       )}
-      <p className="whitespace-pre-wrap leading-relaxed">{report.summary}</p>
-      <p className="text-xs text-[#5E3D38] sm:hidden">
-        Tüm ölçütleri görmek için tabloyu yatay kaydırın.
-      </p>
-      <div className="overflow-x-auto rounded-xl border border-[#9BCEC1]">
-        <table className="w-full min-w-[620px] text-left text-sm">
-          <caption className="p-3 text-left font-semibold">
-            Argüman değerlendirmesi · Her ölçüt 0–10
-          </caption>
-          <thead className="bg-[#9BCEC1]/30">
-            <tr>
-              {[
-                "Uzman",
-                "Tutarlılık",
-                "Kanıt",
-                "Karşı argümana cevap",
-                "Belirsizliği kabul",
-              ].map((h) => (
-                <th key={h} scope="col" className="p-3">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {report.scores.map((s, i) => (
-              <tr key={i} className="border-t border-[#9BCEC1]/40">
-                <th scope="row" className="p-3">
-                  {s.name}
-                </th>
-                {[s.consistency, s.evidence, s.rebuttal, s.uncertainty].map(
-                  (n, j) => (
-                    <td key={j} className="p-3">
-                      {n}
-                    </td>
-                  ),
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {report.scores.map((s, i) => (
-        <p key={i} className="text-sm leading-relaxed">
-          <strong>{s.name}: </strong>
-          {s.reasoning}
+      <section>
+        <h3 className="section-title mb-3">Gerekçeli değerlendirme</h3>
+        <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">
+          {report.summary}
         </p>
-      ))}
+      </section>
+      <section>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 className="section-title">Argümanların gücü</h3>
+          <span className="helper">Her ölçüt 0–10</span>
+        </div>
+        <div className="grid gap-3">
+          {report.scores.map((s, i) => (
+            <article key={i} className="score-card">
+              <h4 className="text-sm font-semibold">{s.name}</h4>
+              <dl className="score-grid">
+                {[
+                  ["Tutarlılık", s.consistency],
+                  ["Kanıt", s.evidence],
+                  ["Karşı argümana cevap", s.rebuttal],
+                  ["Belirsizliği kabul", s.uncertainty],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>
+                      {value}
+                      <span className="text-xs font-normal opacity-60">
+                        {" "}
+                        /10
+                      </span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="text-xs leading-relaxed break-words">
+                {s.reasoning}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
       {(
         [
           ["Ortaklaşılan noktalar", report.agreements],
@@ -75,23 +71,20 @@ export default function JudgeReportView({ report }: { report: JudgeReport }) {
           ["Doğrulanması gereken iddialar", report.claimsToVerify],
         ] as const
       ).map(([title, items]) => (
-        <section
-          key={title}
-          className="rounded-xl border border-[#FFB6A6]/60 bg-white/40 p-4"
-        >
-          <h3 className="mb-2 font-semibold">{title}</h3>
+        <section key={title} className="border-t border-[#5E3D38]/15 pt-4">
+          <h3 className="text-sm font-semibold mb-3">{title}</h3>
           {items.length ? (
-            <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
+            <ul className="list-disc space-y-2 pl-4 text-xs leading-relaxed break-words">
               {items.map((item, i) => (
                 <li key={i}>{item}</li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm">Hakem bu bölüm için bir madde belirtmedi.</p>
+            <p className="helper">Hakem bu bölüm için bir madde belirtmedi.</p>
           )}
         </section>
       ))}
-      <p className="text-xs text-[#5E3D38]">
+      <p className="helper">
         Bu puanlar AI değerlendirmesidir. İddialar ve kaynaklar bağımsız
         doğrulanmamıştır.
       </p>

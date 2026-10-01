@@ -56,7 +56,7 @@ function DebateContent() {
       <div className="min-h-screen bg-[#FFEBD3] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#9BCEC1] border-t-transparent mx-auto mb-4"></div>
-          <p className="text-[#3D2622] font-extrabold text-lg">
+          <p className="text-[#2C1A18] font-semibold text-lg">
             Tartışma yükleniyor...
           </p>
         </div>
@@ -67,17 +67,17 @@ function DebateContent() {
   if (error || !debateData) {
     return (
       <div className="min-h-screen bg-[#FFEBD3] flex items-center justify-center p-4">
-        <div className="bg-[#FFEBD3] border-3 border-[#FFB6A6] rounded-3xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-[#FFB6A6]/40 text-[#3D2622] rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-[#FFB6A6]">
+        <div className="bg-[#FFEBD3] border border-[#FFB6A6] rounded-3xl shadow-sm p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-[#FFB6A6]/40 text-[#2C1A18] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#FFB6A6]">
             <CloseIcon size={32} />
           </div>
-          <h1 className="text-2xl font-extrabold text-[#3D2622] mb-2">
+          <h1 className="text-2xl font-semibold text-[#2C1A18] mb-2">
             Tartışma Bulunamadı
           </h1>
-          <p className="text-[#6B4E4A] font-semibold mb-6">{error}</p>
+          <p className="text-[#5E3D38] font-semibold mb-6">{error}</p>
           <Link
             href="/"
-            className="inline-block bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#3D2622] font-extrabold py-3 px-6 rounded-2xl transition-all shadow-sm"
+            className="inline-block bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold py-3 px-6 rounded-2xl transition-all shadow-sm"
           >
             Ana Sayfaya Dön
           </Link>
@@ -96,28 +96,28 @@ function DebateContent() {
 
   return (
     <div className="min-h-screen bg-[#FFEBD3]">
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
         {/* Header */}
-        <div className="bg-[#FFEBD3] rounded-3xl border-2 border-[#FFB6A6] shadow-lg p-6 mb-6">
+        <div className="surface section-pad mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-            <h1 className="text-3xl font-extrabold text-[#3D2622] flex items-center gap-3">
-              <ShareIcon size={28} className="text-[#3D2622]" />
+            <h1 className="text-2xl font-semibold text-[#2C1A18] flex items-center gap-3">
+              <ShareIcon size={28} className="text-[#2C1A18]" />
               Paylaşılan Tartışma
             </h1>
             <Link
               href="/"
-              className="bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#3D2622] font-extrabold py-3 px-6 rounded-2xl transition-all shadow-sm"
+              className="bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold py-3 px-6 rounded-2xl transition-all shadow-sm"
             >
               Yeni Tartışma Başlat
             </Link>
           </div>
 
-          <div className="bg-[#FFB6A6]/30 rounded-2xl p-5 border-2 border-[#FFB6A6]">
-            <h2 className="text-xl font-extrabold text-[#3D2622] mb-2 flex items-center gap-2">
-              <TargetIcon size={22} className="text-[#3D2622]" />
+          <div className="bg-[#FFB6A6]/30 rounded-2xl p-5 border border-[#FFB6A6]">
+            <h2 className="text-xl font-semibold text-[#2C1A18] mb-2 flex items-center gap-2">
+              <TargetIcon size={22} className="text-[#2C1A18]" />
               {debateData.topic}
             </h2>
-            <div className="flex flex-wrap gap-4 text-sm font-bold text-[#6B4E4A]">
+            <div className="flex flex-wrap gap-4 text-sm font-bold text-[#5E3D38]">
               <span className="flex items-center gap-1.5">
                 <ClockIcon size={16} />
                 {formatTimestamp(debateData.timestamp)}
@@ -134,7 +134,9 @@ function DebateContent() {
           </div>
         </div>
 
-        {debateData.debateFrame && <DebateFrameView frame={debateData.debateFrame} />}
+        {debateData.debateFrame && (
+          <DebateFrameView frame={debateData.debateFrame} />
+        )}
         {debateData.sources && (
           <section className="mb-6 rounded-2xl border border-[#FFB6A6] p-5">
             <h3 className="mb-2 font-semibold">Kullanıcının kaynak notları</h3>
@@ -145,8 +147,8 @@ function DebateContent() {
           </section>
         )}
         {/* Experts */}
-        <div className="bg-[#FFEBD3] rounded-3xl border-2 border-[#FFB6A6] shadow-lg p-6 mb-6">
-          <h3 className="text-xl font-extrabold text-[#3D2622] mb-4 flex items-center gap-2">
+        <div className="surface section-pad mb-6">
+          <h3 className="text-xl font-semibold text-[#2C1A18] mb-4 flex items-center gap-2">
             <UsersIcon size={22} />
             Katılan Uzmanlar
           </h3>
@@ -158,12 +160,12 @@ function DebateContent() {
               .map((branch) => (
                 <div
                   key={branch.id}
-                  className="bg-[#FFB6A6]/20 rounded-2xl p-4 border-2 border-[#FFB6A6]"
+                  className="bg-[#FFB6A6]/20 rounded-2xl p-4 border border-[#FFB6A6]"
                 >
-                  <h4 className="font-extrabold text-[#3D2622] mb-1">
+                  <h4 className="font-semibold text-[#2C1A18] mb-1">
                     {branch.name}
                   </h4>
-                  <p className="text-sm text-[#6B4E4A] font-medium leading-relaxed">
+                  <p className="text-sm text-[#5E3D38] font-medium leading-relaxed">
                     {branch.description}
                   </p>
                 </div>
@@ -172,8 +174,8 @@ function DebateContent() {
         </div>
 
         {/* Chat History */}
-        <div className="bg-[#FFEBD3] rounded-3xl border-2 border-[#FFB6A6] shadow-lg p-6 mb-6">
-          <h3 className="text-xl font-extrabold text-[#3D2622] mb-4 flex items-center gap-2">
+        <div className="surface section-pad mb-6">
+          <h3 className="text-xl font-semibold text-[#2C1A18] mb-4 flex items-center gap-2">
             <ChatIcon size={22} />
             Tartışma Geçmişi
           </h3>
@@ -186,14 +188,14 @@ function DebateContent() {
 
         {/* Final Verdict */}
         {finalVerdictText && (
-          <div className="bg-[#FFEBD3] rounded-3xl border-2 border-[#FFB6A6] shadow-lg p-6">
-            <h3 className="text-xl font-extrabold text-[#3D2622] mb-4 flex items-center gap-2">
+          <div className="surface section-pad">
+            <h3 className="text-xl font-semibold text-[#2C1A18] mb-4 flex items-center gap-2">
               <JudgeIcon size={24} />
               Hakem Kararı
             </h3>
-            <div className="bg-[#9BCEC1] rounded-2xl p-6 border-2 border-[#FFB6A6]">
+            <div className="rounded-xl p-1">
               <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap text-[#3D2622] font-extrabold text-lg leading-relaxed">
+                <div className="whitespace-pre-wrap text-[#2C1A18] font-semibold text-lg leading-relaxed">
                   {debateData.judgeReport ? (
                     <JudgeReportView report={debateData.judgeReport} />
                   ) : (
@@ -216,7 +218,7 @@ export default function SharedDebatePage() {
         <div className="min-h-screen bg-[#FFEBD3] flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#9BCEC1] border-t-transparent mx-auto mb-4"></div>
-            <p className="text-[#3D2622] font-extrabold text-lg">
+            <p className="text-[#2C1A18] font-semibold text-lg">
               Sayfa yükleniyor...
             </p>
           </div>

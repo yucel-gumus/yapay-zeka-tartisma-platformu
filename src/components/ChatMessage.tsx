@@ -3,86 +3,65 @@ import { DEBATE_ROLES } from "@/lib/debateProtocol";
 import { STAGE_LABELS } from "@/lib/debateSchedule";
 import JudgeReportView from "./JudgeReportView";
 import { ChatMessageType, JudgeReport } from "@/types/debate";
-import { JudgeIcon, RobotIcon, UserAvatarIcon } from "./ui/Icons";
-
+import { JudgeIcon } from "./ui/Icons";
 interface ChatMessageProps {
   message: ChatMessageType;
   isStreaming?: boolean;
   judgeReport?: JudgeReport | null;
 }
-
 const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   isStreaming = false,
   judgeReport,
 }) => {
-  if (message.role === "judge") {
+  if (message.role === "judge")
     return (
-      <div className="mb-6 p-6 bg-[#9BCEC1] border-3 border-[#FFB6A6] rounded-3xl shadow-md">
-        <div className="flex items-center mb-3 space-x-3">
-          <div className="p-2 bg-[#FFB6A6] text-[#2C1A18] rounded-2xl shadow-xs">
-            <JudgeIcon size={22} />
-          </div>
-          <span className="font-extrabold text-[#2C1A18] text-xl">
-            Hakem Kararı
+      <article className="judge-message">
+        <div className="message-header">
+          <span className="message-avatar">
+            <JudgeIcon size={18} />
           </span>
+          <strong>Hakem değerlendirmesi</strong>
         </div>
-        <div className="text-[#2C1A18] text-lg leading-relaxed font-bold">
-          {judgeReport ? (
-            <JudgeReportView report={judgeReport} />
-          ) : (
-            message.content
-          )}
-          {isStreaming && <span className="animate-pulse">|</span>}
-        </div>
-      </div>
+        {judgeReport ? (
+          <JudgeReportView report={judgeReport} />
+        ) : (
+          <div className="message-content">{message.content}</div>
+        )}
+      </article>
     );
-  }
-
-  const isUser = message.role === "user";
-
+  const user = message.role === "user";
+  const name =
+    message.branchName || (user ? "Tartışmanın başlangıcı" : "Uzman");
   return (
-    <div
-      className={`mb-4 p-5 rounded-3xl border-2 transition-all shadow-xs ${
-        isUser
-          ? "bg-[#FFB6A6]/40 border-[#FFB6A6] text-[#2C1A18]"
-          : "bg-white/50 border-[#FFB6A6]/40 text-[#2C1A18]"
-      }`}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 bg-[#9BCEC1] text-[#2C1A18] rounded-xl flex items-center justify-center shadow-xs">
-            {isUser ? <UserAvatarIcon size={18} /> : <RobotIcon size={18} />}
-          </div>
-          <span className="font-extrabold text-[#2C1A18] text-base">
-            {message.branchName ||
-              (isUser ? "Tartışma Konusu & Başlangıcı" : "Uzman")}
-          </span>
-        </div>
+    <article className={`message ${user ? "user-message" : ""}`}>
+      <div className="message-header">
+        <span className="message-avatar">{user ? "?" : name.slice(0, 1)}</span>
+        <strong>{name}</strong>
         {message.branchName && (
-          <span className="text-xs bg-[#9BCEC1] text-[#2C1A18] font-extrabold px-3 py-1 rounded-xl shadow-xs">
+          <span className="pill">
             {message.debateRole
-              ? DEBATE_ROLES[message.debateRole]?.label || "Uzman Görüşü"
-              : "Uzman Görüşü"}
+              ? DEBATE_ROLES[message.debateRole]?.label || "Uzman görüşü"
+              : "Uzman görüşü"}
+          </span>
+        )}
+        {message.stage && STAGE_LABELS[message.stage] && (
+          <span className="helper sm:ml-auto">
+            {message.roundNumber ? `Tur ${message.roundNumber} · ` : ""}
+            {STAGE_LABELS[message.stage]}
           </span>
         )}
       </div>
-      <div className="text-[#2C1A18] leading-relaxed font-normal text-base whitespace-pre-wrap pl-1">
-        {message.stage && STAGE_LABELS[message.stage] && (
-          <p className="mb-2 text-xs font-semibold text-[#5E3D38]">
-            {message.roundNumber ? `Tur ${message.roundNumber} · ` : ""}{STAGE_LABELS[message.stage]}
-          </p>
-        )}
+      <div className="message-content">
         {message.content}
         {isStreaming && (
-          <span className="animate-pulse font-extrabold text-[#9BCEC1]">
+          <span className="animate-pulse" aria-hidden="true">
             {" "}
-            |
+            ▍
           </span>
         )}
       </div>
-    </div>
+    </article>
   );
 };
-
 export default ChatMessage;

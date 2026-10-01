@@ -2,7 +2,7 @@ import React from "react";
 import type { JudgeReport } from "@/types/debate";
 import JudgeReportView from "./JudgeReportView";
 import { Modal } from "./ui/Modal";
-import { JudgeIcon, SparklesIcon } from "./ui/Icons";
+import { JudgeIcon } from "./ui/Icons";
 
 interface JudgePopupProps {
   showPopup: boolean;
@@ -108,120 +108,50 @@ const JudgePopup: React.FC<JudgePopupProps> = ({
   onClose,
 }) => {
   const sections = parseVerdict(verdict);
-
   return (
     <Modal
       isOpen={showPopup}
       onClose={onClose}
-      title="Hakem Değerlendirme & Hüküm Raporu"
-      icon={<JudgeIcon size={24} />}
+      title="Hakem değerlendirmesi"
+      icon={<JudgeIcon size={21} />}
       maxWidthClass="max-w-3xl"
     >
-      <div className="text-center">
-        {isLoading ? (
-          <div className="py-14 flex flex-col items-center justify-center space-y-4">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#9BCEC1] border-t-transparent"></div>
-            <div>
-              <p className="text-[#2C1A18] font-extrabold text-xl">
-                Hakem Kararı Analiz Ediliyor...
-              </p>
-              <p className="text-sm text-[#5E3D38] font-semibold mt-1">
-                Seçilen tüm uzmanların sunduğu argümanlar çapraz analiz edilerek
-                sentezleniyor
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="text-left space-y-5">
-            {/* Header Badge */}
-            <div className="flex items-center justify-between bg-[#FFB6A6]/30 px-5 py-3 rounded-2xl border border-[#FFB6A6]">
-              <div className="flex items-center space-x-2">
-                <SparklesIcon size={18} className="text-[#2C1A18]" />
-                <span className="text-xs font-extrabold uppercase tracking-wider text-[#2C1A18]">
-                  AI Argüman Değerlendirmesi
-                </span>
-              </div>
-              <span className="text-[11px] font-extrabold bg-[#9BCEC1] text-[#2C1A18] px-3 py-0.5 rounded-full">
-                Gerekçeli değerlendirme
-              </span>
-            </div>
-
-            {/* Scrollable Verdict Section Deck */}
-            <div className="space-y-4">
-              {report ? (
-                <JudgeReportView report={report} />
-              ) : (
-                sections.map((sec, idx) => {
-                  if (sec.type === "winner") {
-                    return (
-                      <div
-                        key={idx}
-                        className="bg-[#9BCEC1]/30 border-2 border-[#9BCEC1] rounded-2xl p-5 shadow-xs relative overflow-hidden"
-                      >
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="text-xl">{sec.icon}</span>
-                          <h4 className="font-extrabold text-[#2C1A18] text-base">
-                            {sec.title}
-                          </h4>
-                        </div>
-                        <p className="text-[#2C1A18] text-sm md:text-base font-bold leading-relaxed whitespace-pre-wrap">
-                          {sec.content}
-                        </p>
-                      </div>
-                    );
-                  }
-
-                  if (sec.type === "ruling") {
-                    return (
-                      <div
-                        key={idx}
-                        className="bg-[#2C1A18] text-[#FFEBD3] rounded-2xl p-6 shadow-md border-2 border-[#FFB6A6] relative"
-                      >
-                        <div className="flex items-center space-x-2 mb-3">
-                          <span className="text-2xl">{sec.icon}</span>
-                          <h4 className="font-extrabold text-[#9BCEC1] text-lg uppercase tracking-wide">
-                            {sec.title}
-                          </h4>
-                        </div>
-                        <p className="text-[#FFEBD3] text-base md:text-lg font-extrabold leading-relaxed whitespace-pre-wrap">
-                          {sec.content}
-                        </p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={idx}
-                      className="bg-[#FFB6A6]/20 border-2 border-[#FFB6A6]/60 rounded-2xl p-5 shadow-xs"
-                    >
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="text-xl">{sec.icon}</span>
-                        <h4 className="font-extrabold text-[#2C1A18] text-base">
-                          {sec.title}
-                        </h4>
-                      </div>
-                      <p className="text-[#2C1A18] text-sm md:text-base font-semibold leading-relaxed whitespace-pre-wrap">
-                        {sec.content}
-                      </p>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Dismiss Button */}
-            <button
-              onClick={onClose}
-              className="w-full bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-extrabold text-lg py-4 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-[0.99] cursor-pointer"
-            >
-              Kararı Anladım ve Kapat
-            </button>
-          </div>
-        )}
-      </div>
+      {isLoading ? (
+        <div role="status" className="py-12 text-center">
+          <div className="animate-spin w-9 h-9 rounded-full border-2 border-[#9BCEC1] border-t-transparent mx-auto mb-5" />
+          <p className="text-lg font-semibold">Argümanlar değerlendiriliyor</p>
+          <p className="helper mt-2">
+            Tutarlılık, kanıtlar ve karşı argümanlara verilen yanıtlar
+            inceleniyor.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {report ? (
+            <JudgeReportView report={report} />
+          ) : (
+            sections.map((section, index) => (
+              <section
+                key={index}
+                className={
+                  section.type === "ruling"
+                    ? "report-decision"
+                    : "border-b border-[#5E3D38]/15 pb-5"
+                }
+              >
+                <h4 className="text-sm font-semibold mb-3">{section.title}</h4>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                  {section.content}
+                </p>
+              </section>
+            ))
+          )}
+          <button onClick={onClose} className="btn btn-dark w-full">
+            Kararı anladım ve kapat
+          </button>
+        </div>
+      )}
     </Modal>
   );
 };
-
 export default JudgePopup;

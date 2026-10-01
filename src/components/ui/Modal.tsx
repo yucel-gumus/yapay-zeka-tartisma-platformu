@@ -68,7 +68,7 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[#2C1A18]/50 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+    <div className="fixed inset-0 bg-[#2C1A18]/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
       <div
         ref={dialogRef}
         role="dialog"
@@ -76,19 +76,19 @@ export const Modal: React.FC<ModalProps> = ({
         aria-labelledby={title ? titleId : undefined}
         aria-label={title ? undefined : "İletişim kutusu"}
         tabIndex={-1}
-        className={`bg-[#FFEBD3] border-2 border-[#FFB6A6] rounded-3xl p-6 ${maxWidthClass} w-full shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
+        className={`bg-[#FFEBD3] border border-[#FFB6A6]/50 rounded-2xl p-5 sm:p-7 ${maxWidthClass} w-full shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
       >
         {title && (
-          <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-[#FFB6A6]/40">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#FFB6A6]/40">
             <div className="flex items-center space-x-3">
               {icon && (
-                <div className="w-10 h-10 bg-[#9BCEC1] rounded-2xl flex items-center justify-center text-[#2C1A18] shadow-xs">
+                <div className="w-9 h-9 bg-[#9BCEC1] rounded-2xl flex items-center justify-center text-[#2C1A18] ">
                   {icon}
                 </div>
               )}
               <h3
                 id={titleId}
-                className="text-xl font-extrabold text-[#2C1A18] tracking-tight"
+                className="text-lg font-semibold text-[#2C1A18] tracking-tight"
               >
                 {title}
               </h3>
