@@ -1,9 +1,10 @@
-import React from 'react';
-import { Modal } from './ui/Modal';
-import { PlusIcon, SparklesIcon, IdeaIcon } from './ui/Icons';
+import React from "react";
+import { Modal } from "./ui/Modal";
+import { PlusIcon, SparklesIcon, IdeaIcon } from "./ui/Icons";
 
 interface AddBranchModalProps {
   showModal: boolean;
+  error?: string;
   newBranchName: string;
   setNewBranchName: (name: string) => void;
   newBranchDescription: string;
@@ -17,6 +18,7 @@ interface AddBranchModalProps {
 
 const AddBranchModal: React.FC<AddBranchModalProps> = ({
   showModal,
+  error,
   newBranchName,
   setNewBranchName,
   newBranchDescription,
@@ -31,10 +33,17 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
     <Modal
       isOpen={showModal}
       onClose={onClose}
-      title={editingBranch ? 'Uzmanlık Alanını Düzenle' : 'Yeni Uzmanlık Alanı Ekle'}
+      title={
+        editingBranch ? "Uzmanlık Alanını Düzenle" : "Yeni Uzmanlık Alanı Ekle"
+      }
       icon={<PlusIcon size={22} />}
       maxWidthClass="max-w-lg"
     >
+      {error && (
+        <p role="alert" className="mb-4 text-sm text-[#5E3D38]">
+          {error}
+        </p>
+      )}
       <div className="space-y-6">
         {/* Expertise Name Section */}
         <div className="relative">
@@ -47,6 +56,7 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
             </label>
           </div>
           <input
+            maxLength={150}
             type="text"
             value={newBranchName}
             onChange={(e) => setNewBranchName(e.target.value)}
@@ -85,6 +95,7 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
             </button>
           </div>
           <textarea
+            maxLength={4000}
             value={newBranchDescription}
             onChange={(e) => setNewBranchDescription(e.target.value)}
             placeholder="Bu uzmanlık alanının özelliklerini ve bakış açısını detaylı olarak açıklayın..."
@@ -96,7 +107,13 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
               <IdeaIcon size={14} className="text-[#2C1A18]" />
               <span>Detaylı açıklama daha iyi tartışmalar sağlar</span>
             </span>
-            <span className={newBranchDescription.length > 100 ? 'text-[#2C1A18]' : 'text-[#5E3D38]'}>
+            <span
+              className={
+                newBranchDescription.length > 100
+                  ? "text-[#2C1A18]"
+                  : "text-[#5E3D38]"
+              }
+            >
               {newBranchDescription.length} karakter
             </span>
           </div>
@@ -115,7 +132,7 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
           disabled={!newBranchName.trim() || !newBranchDescription.trim()}
           className="flex-1 py-3.5 px-4 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-extrabold rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xs cursor-pointer"
         >
-          {editingBranch ? 'Güncelle' : 'Ekle'}
+          {editingBranch ? "Güncelle" : "Ekle"}
         </button>
       </div>
     </Modal>

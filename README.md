@@ -1,83 +1,41 @@
-# 🎭 Yapay Zeka Tartışma Platformu - Multi-Agent AI Debate & Evaluation System
+# Yapay Zeka Tartışma Platformu
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Next.js 15](https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![React 19](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Firebase Firestore](https://img.shields.io/badge/Firebase-Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
-[![Google Gemini](https://img.shields.io/badge/Google_Gemini-Multi--Agent_AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
-[![Portfolio](https://img.shields.io/badge/Portfolio-yucelgumus.dev-2563EB?style=for-the-badge&logo=google-chrome&logoColor=white)](https://www.yucelgumus.dev/)
+Farklı uzmanlıkların bir konuyu tartıştığı, argümanların AI hakem tarafından değerlendirildiği ve sonuçların bağlantıyla paylaşılabildiği bir Next.js uygulaması.
 
-> Farklı uzmanlık alanlarına ve bakış açılarına sahip yapay zeka ajanlarının (Felsefe, Bilim, Etik, Teknoloji, Ekonomi vb.) belirlenen bir tez veya konu üzerinde gerçek zamanlı olarak tartıştığı; sürecin sonunda tarafsız bir **Hakem Ajan (Judge Agent)** tarafından argümanların puanlanıp karara bağlandığı çoklu ajan (Multi-Agent) simülasyon ve paylaşım platformu.
+## Tartışma akışı
 
----
+1. Konuyu yazın, 2–4 uzman seçin ve her uzmana bir görev verin: **savunan**, **karşı çıkan**, **varsayımları sorgulayan**, **kanıtları denetleyen**.
+   **AI ile çerçeve oluştur** düğmesiyle tartışılacak tez/soru, kavram tanımları, alt iddialar ve kapsam önerisi alın. Alanları düzenleyip **Çerçeveyi onayla ve başlat** ile onaylayın. Öneri tartışmayı kendiliğinden başlatmaz; konu değiştiğinde çerçeve sıfırlanır. Öneri alınamazsa **Kendim netleştireceğim** ile aynı alanları doldurabilirsiniz. Tüm uzmanlar ve hakem aynı onaylanan çerçeveyi kullanır; ilk konu metni ayrıca korunur.
+2. İsteğe bağlı kaynak bağlantılarını ve kanıt notlarını ekleyin. Bağlantıların içeriği otomatik okunmaz veya doğrulanmaz.
+3. Tartışma uzunluğunu seçin: **Kısa** kişi başına 3, **Standart** 4 (varsayılan), **Derin** 6 konuşma. Bir tam turda her uzman seçim sırasıyla bir kez konuşur. Standart akış açılış → karşı argüman → çapraz sorgulama → kapanış şeklindedir. Kısa akışta sorgulama karşı argüman ve kapanışa dahil edilir; derin akışta ayrıca kanıt denetimi ve cevap turu vardır. Tartışmayı duraklatabilir, kaldığı yerden sürdürebilir veya yeni bir oturum başlatabilirsiniz.
+4. En az bir uzman yanıtından sonra hakem değerlendirmesi alabilirsiniz. Başarısız istekler uzman argümanı olarak kaydedilmez.
+5. Hakem önce nihai hükmü verir: tez desteklendi, çürütüldü, kanıtlanamadı veya kısmen desteklendi. Argümanı daha güçlü olan katılımcıyı ve sonucu belirleyen gerekçeyi açıklar. Ardından tutarlılık, kanıt, karşı argümana cevap ve belirsizliği kabul ölçütlerini 0–10 arasında değerlendirir; ortaklaşmalar, anlaşmazlıklar ve doğrulanması gereken iddiaları belirtir. Mevcut konuşmaları koruyarak hakemi yeniden değerlendirebilirsiniz.
+6. Sonuç Firebase Firestore'a kaydedilerek `/d/[id]` bağlantısıyla paylaşılır. Kayıt hatasında oturumu kaybetmeden tekrar deneyebilirsiniz.
 
-## 🌟 Öne Çıkan Özellikler
+Hakem puanları doğruluk garantisi değildir. Yeni değerlendirmeler Python backend’de zorunlu JSON şeması ve konuşmacı listesiyle doğrulanır. Geçersiz çıktıda backend bir kez yeniden üretim dener; yine geçersizse oturum korunarak hata gösterilir. Önceden kaydedilmiş metin biçimindeki raporlar okunmaya devam eder.
 
-- 🤖 **Çoklu Ajan Tartışma Simülasyonu (Multi-Agent Debate):** Kullanıcının belirlediği konu üzerinde en az iki farklı uzman ajanın sırayla argüman ve antitez üretmesini sağlar (`useDebateLogic.ts`).
-- ⚖️ **Tarafsız Hakem Ajanı (Judge Agent):** Tartışma tamamlandığında argümanların mantıksal tutarlılığını, kanıt gücünü ve ikna ediciliğini değerlendirerek kazananı ve ayrıntılı gerekçeli kararı açıklar (`JudgePopup.tsx`, `/api/judge`).
-- 🌐 **Paylaşılabilir Tartışma Bağlantıları (Shareable URLs):** Tamamlanan oturumları **Firebase Firestore** üzerinde saklayarak `/d/[id]` dinamik rotası üzerinden herkese açık paylaşabilme (`ShareModal.tsx`).
-- 🌿 **Özelleştirilebilir Branş & Perspektif Yönetimi:** Kullanıcının tartışmaya yeni uzmanlık dalları veya özel kişilik profilleri ekleyebilmesi (`branches.json`, `AddBranchModal.tsx`).
-- ✨ **Yapay Zeka Destekli Konu & Açıklama Üretimi:** Tek tıkla ilgi çekici ve düşündürücü tartışma konuları öneren yardımcı ajan (`/api/generate-description`).
+Tamamlanan konuşmalar, konu, görevler, tur planı ve değerlendirme mevcut tarayıcının `localStorage` alanına otomatik kaydedilir. Yenilemeden sonra oturum duraklatılmış olarak açılır; yarım kalan konuşma aynı aşamadan yeniden istenir. Eski kayıtlı oturumların toplam 12 konuşmalık bütçesi korunur. Yeni plan ve konuşma aşamaları paylaşım kaydına da dahil edilir. Özel uzmanlar aynı tarayıcıda saklanır. Yerel kayıt, cihazlar arası senkronizasyon veya özel/veri şifreli depolama sağlamaz.
 
----
+Çerçeve taslağı düzenleme sırasında da otomatik kaydedilir. Onaylanan çerçeve canlı tartışmada ve paylaşım sayfasında gösterilir. Önceki sürümden kalan, çerçevesiz oturumlar kendi konu metinleriyle devam edebilir; yeni tartışmalar çerçeve tamamlanmadan başlatılmaz.
 
-## 🏗️ Mimari & Çoklu Ajan Karar Döngüsü
+## Teknolojiler
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Kullanıcı
-    participant UI as Next.js Arayüzü
-    participant AgentA as Taraf Ajan (Tez)
-    participant AgentB as Karşıt Ajan (Antitez)
-    participant Judge as Hakem Ajan (Değerlendirme)
-    participant DB as Firebase Firestore
+Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4 ve Firebase Firestore. AI çağrıları sunucudan ayrı Python/FastAPI backend’e yapılır. Yerel backend deposu: `/Volumes/hayabusa/github_projelerim/python_backend`. Bu frontend’in mevcut `.env.local` yapılandırması `AI_API_URL=http://127.0.0.1:8000` kullanır. Backend’i bu portta çalıştırın; canlı ortamda adresi yayınlanan backend URL’siyle değiştirin.
 
-    User->>UI: Konu & Branşları Seçer ve Başlatır
-    loop Tartışma Turları (Rounds)
-        UI->>AgentA: Argümanını Sun
-        AgentA-->>UI: Argüman Metni & Gerekçeler
-        UI->>AgentB: Önceki Argümana Cevap Ver
-        AgentB-->>UI: Karşı Argüman & Örnekler
-    end
-    UI->>Judge: Tüm Tartışma Geçmişini Analiz Et
-    Judge-->>UI: Puan Tablosu, Analiz Raporu ve Kazanan
-    UI->>DB: Oturumu Kaydet (/d/[id])
-```
+## Kurulum
 
----
-
-## 🛠️ Teknoloji Yığını
-
-| Kategori | Teknoloji / Kütüphane | Açıklama |
-| :--- | :--- | :--- |
-| **Framework & UI** | Next.js 15 (App Router) + React 19 | Modern ve reaktif web altyapısı |
-| **Yapay Zeka** | Google Gemini 1.5 Pro / Flash | Çoklu ajan karakterleri ve hakem mantığı |
-| **Veritabanı** | Firebase Firestore | Tartışma geçmişlerinin saklanması ve paylaşımı |
-| **Stil & Tasarım** | Tailwind CSS + Lucide Icons | Canlı mesaj balonları ve şık modallar |
-
----
-
-## 🚀 Hızlı Başlangıç
-
-### Gereksinimler
-- **Node.js**: v18.18+ veya v20+
-- **Google Gemini API Key**
-- **Firebase Projesi Yapılandırması**
-
-### Kurulum
+Node.js 20.9 veya üstü kullanın.
 
 ```bash
-git clone https://github.com/yucel-gumus/yapay-zeka-tartisma-platformu.git
-cd yapay-zeka-tartisma-platformu
-
-npm install
+npm ci
+npm run dev
 ```
 
-### Ortam Değişkenleri (`.env.local`)
+`.env.local` dosyasına aşağıdaki yapılandırmayı ekleyin:
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key
+AI_API_URL=https://your-ai-gateway.example
+GATEWAY_CLIENT_API_KEY=your_gateway_client_key
 NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
@@ -86,62 +44,70 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### Çalıştırma
+`GEMINI_GATEWAY_URL` ve `CLIENT_API_KEY` eski isimleri de desteklenir. `GEMINI_API_KEY` bu uygulama tarafından doğrudan kullanılmaz; model seçimi ve sağlayıcı anahtarları gateway tarafındadır. Üretimde gateway adresi ve istemci anahtarı gereklidir.
+
+## Gateway sözleşmesi
+
+- `POST /api/debate/clarify`: `{ topic }` → `{ frame: { thesis, definitions: [{ term, meaning }], claims: ["alt iddia"], scope } }`. Frontend rotası `/api/clarify-topic` üzerinden çağrılır. Öneri, sadeleştirilmiş JSON çıktı şemasıyla üretilir ve tam alan sınırları backend’de doğrulanır. Geçersiz çıktıda bir kez yeniden üretim denenir.
+- Uzman ve hakem istekleri ayrıca `debate_frame` alanını kabul eder. Yeni frontend oturumları bu onaylanan veriyi her iki isteğe de ekler; eski istemciler için alan isteğe bağlıdır. Tez/kapsam 2.000, kavram adı 150, kavram anlamı/alt iddia 1.000 karakter; en fazla 6 tanım ve 1–6 alt iddia kabul edilir.
+- `POST /api/debate/turn`: `{ topic, persona: { name, description }, debate_role, sources, round_number, total_rounds, participating_experts, chat_history: [{ role, content, branch_name, debate_role, round_number, stage }] }`. `round_number` (1–6) ve `total_rounds` (3, 4 veya 6) birlikte gönderilir; eski istemciler bu alanları atlayabilir. Tüm katılımcılar ilk konuşmada da modele bildirilir. Konuşma aşamasını backend tur planından belirler. Görev ve kaynak notları ayrı alanlarla Python backend’e aktarılır; uzman istemi backend’de oluşturulur. `text/plain` yanıtı doğrudan akış olarak aktarılır. `{ "text": "..." }` JSON yanıtı tamamlandıktan sonra gösterilir. SSE bu sözleşmede desteklenmez.
+- `POST /api/debate/judge`: `{ topic, sources, chat_history }` → `{ verdict, report }`. Python backend, Gemini’ye JSON çıktı şeması ve hakem system instruction verir. Rapor şeması ve katılımcı listesi iki tarafta da doğrulanır. Eski backend yalnızca `verdict` döndürürse güncel backend’in çalıştırılması gerektiği bildirilir. Backend rapor üretiminin toplam süre bütçesi 110, frontend isteğinin süre bütçesi 115 saniyedir.
+- `POST /api/generate`: `{ prompt }` → `{ "text": "..." }`.
+
+Yapılandırılmış hakem çıktısı:
+
+```json
+{
+  "decision": {
+    "outcome": "not_established",
+    "ruling": "Bu oturumda tez kanıtlanamadı.",
+    "winner": null,
+    "rationale": "İddianın ispat yükü karşılanmadı. Tek konuşmacı olduğu için argüman üstünlüğü karşılaştırılamıyor."
+  },
+  "summary": "Gerekçeli sonuç ve sınırlar",
+  "scores": [
+    {
+      "name": "Uzman",
+      "consistency": 8,
+      "evidence": 4,
+      "rebuttal": 7,
+      "uncertainty": 9,
+      "reasoning": "Somut gerekçe"
+    }
+  ],
+  "agreements": ["Ortaklaşılan nokta"],
+  "disagreements": ["Çözülemeyen anlaşmazlık"],
+  "claimsToVerify": ["Doğrulanacak iddia ve yöntem"]
+}
+```
+
+## İstek ve paylaşım sınırları
+
+API gövdesi en fazla 150 KB; konu 2.000, kaynak notları ve uzman açıklaması 4.000, uzman adı 150 karakter olabilir. Geçmiş en fazla 30 mesaj ve mesaj başına 12.000 karakter kabul eder. Gateway çağrıları 115 saniye sonra zaman aşımına uğrar. Geçici HTTP hatalarında istemci sınırlı sayıda tekrar dener; diğer hatalarda oturum korunur.
+
+API rotaları süreç belleğinde IP başına dakikada 30 istek sınırı uygular. **Bu sınır tek süreç içindir; dağıtık/serverless kurulumda global kota sağlamaz.** `x-forwarded-for` yalnızca güvenilir ters proxy tarafından belirlenmelidir. Üretimde gateway veya hosting katmanında dağıtık limit ve bütçe kontrolü gerekir. Bu uygulama kullanıcı kimlik doğrulaması içermez.
+
+Firestore'a yazma/okuma istemci SDK'sıyla yapılır. Firebase güvenlik kuralları bu depoda yönetilmez; üretim projesinde veri boyutu, izin verilen alanlar ve yazma yetkileri ayrıca sınırlandırılmalıdır. Paylaşılan tartışmalar herkese açık olmak üzere tasarlanmıştır. Yeni kayıtlar UUID belge kimliği kullanır; eski kısa bağlantılar sorgu ile okunmaya devam eder. Yeniden denemeler aynı belge kimliğine yazar; Firebase kuralları aynı kaydın tekrar yazılmasına uygun olmalıdır.
+
+## Kontroller
 
 ```bash
-npm run dev
+npm run typecheck
+npm run lint
+npm test
+npm run build
 ```
 
-Uygulamaya `http://localhost:3000` adresinden erişebilirsiniz.
+Testler rapor şemasını, eski çıktı uyumluluğunu, girdi ve kota sınırlarını, görevlerin gateway'e aktarımını ve gerçek metin akışını sahte gateway yanıtlarıyla denetler. Gerçek AI ve Firebase hizmetlerini çağırmaz.
 
----
+## Dizinler
 
-## 📂 Proje Dizin Yapısı
+- `src/hooks`: tartışma ve özel uzman yönetimi
+- `src/components`: kurulum, tartışma, hakem raporu ve paylaşım arayüzleri
+- `src/lib/debateProtocol.ts`: görev etiketleri ve hakem çıktısı doğrulaması; asıl üretim istemleri Python backend’in `app/core/debate_prompts.py` dosyasındadır
+- `src/lib/apiGuard.ts`: API girdi ve istek sınırları
+- `src/lib/gateway.ts`: gateway bağlantısı
+- `src/utils/shareUtils.ts`: Firestore paylaşımı
+- `tests`: davranış kontrolleri
 
-```
-yapay-zeka-tartisma-platformu/
-├── package.json
-├── tailwind.config.ts
-├── next.config.ts
-└── src/
-    ├── app/
-    │   ├── page.tsx                    # Ana tartışma oluşturma ekranı
-    │   ├── d/[id]/page.tsx             # Paylaşılan tartışma detay sayfası
-    │   └── api/
-    │       ├── chat/route.ts           # Ajan konuşma API'si
-    │       ├── judge/route.ts          # Hakem değerlendirme API'si
-    │       └── generate-description/   # Konu öneri API'si
-    ├── components/
-    │   ├── DebateSetup.tsx             # Konu ve ajan seçici panel
-    │   ├── ChatDisplay.tsx             # Canlı tartışma akışı
-    │   ├── ChatMessage.tsx             # Ajan mesaj kutusu
-    │   ├── JudgePopup.tsx              # Hakem karar kartı
-    │   └── ShareModal.tsx              # Paylaşım bağlantı modali
-    ├── hooks/
-    │   ├── useDebateLogic.ts           # Tartışma tur yönetimi
-    │   └── useBranchManagement.ts     # Branş ve uzmanlık yönetimi
-    └── lib/
-        ├── firebase.ts                 # Firestore entegrasyonu
-        └── gateway.ts                  # Gemini API yönlendirici
-```
-
----
-
-## 📄 Lisans
-Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
-
----
-
-## 👨‍💻 Geliştirici & İletişim
-
-**Yücel Gümüş** - Full Stack Developer
-
-- 🌐 **Web Sitesi / Portfolyo:** [yucelgumus.dev](https://www.yucelgumus.dev/)
-- 💼 **LinkedIn:** [linkedin.com/in/yucel-gumus](https://www.linkedin.com/in/yucel-gumus/)
-- 🐙 **GitHub:** [@yucel-gumus](https://github.com/yucel-gumus)
-
-<p align="left">
-  <a href="https://www.yucelgumus.dev/" target="_blank" rel="noopener noreferrer">
-    <img src="https://img.shields.io/badge/Developed%20by-Yücel%20Gümüş-blue?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Yücel Gümüş Portfolio" />
-  </a>
-</p>
+Geliştirici: [Yücel Gümüş](https://www.yucelgumus.dev/) · [GitHub](https://github.com/yucel-gumus/yapay-zeka-tartisma-platformu)

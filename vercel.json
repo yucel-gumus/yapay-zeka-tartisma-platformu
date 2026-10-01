@@ -1,5 +1,8 @@
 {
   "functions": {
+    "src/app/api/clarify-topic/route.ts": {
+      "maxDuration": 120
+    },
     "src/app/api/chat/route.ts": {
       "maxDuration": 120
     },

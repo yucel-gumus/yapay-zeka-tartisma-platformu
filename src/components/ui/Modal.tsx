@@ -1,5 +1,5 @@
-import React from 'react';
-import { CloseIcon } from './Icons';
+import React, { useEffect, useId, useRef } from "react";
+import { CloseIcon } from "./Icons";
 
 interface ModalProps {
   isOpen: boolean;
@@ -15,14 +15,67 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   icon,
-  maxWidthClass = 'max-w-lg',
+  maxWidthClass = "max-w-lg",
   children,
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const previous = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    const focusable = () =>
+      Array.from(
+        dialog?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), input, textarea, select, a[href], [tabindex="0"]',
+        ) || [],
+      );
+    (focusable()[0] || dialog)?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+      if (event.key === "Tab") {
+        const elements = focusable();
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+        if (!first) {
+          event.preventDefault();
+          dialog?.focus();
+        } else if (
+          event.shiftKey &&
+          (document.activeElement === first ||
+            document.activeElement === dialog)
+        ) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previous?.focus();
+    };
+  }, [isOpen, onClose]);
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-[#2C1A18]/50 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : "İletişim kutusu"}
+        tabIndex={-1}
         className={`bg-[#FFEBD3] border-2 border-[#FFB6A6] rounded-3xl p-6 ${maxWidthClass} w-full shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
       >
         {title && (
@@ -33,7 +86,12 @@ export const Modal: React.FC<ModalProps> = ({
                   {icon}
                 </div>
               )}
-              <h3 className="text-xl font-extrabold text-[#2C1A18] tracking-tight">{title}</h3>
+              <h3
+                id={titleId}
+                className="text-xl font-extrabold text-[#2C1A18] tracking-tight"
+              >
+                {title}
+              </h3>
             </div>
             <button
               onClick={onClose}
@@ -44,7 +102,9 @@ export const Modal: React.FC<ModalProps> = ({
             </button>
           </div>
         )}
-        <div className="overflow-y-auto flex-1 custom-scrollbar">{children}</div>
+        <div className="overflow-y-auto flex-1 custom-scrollbar">
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -1,325 +1,533 @@
-import { useState, useRef, useCallback } from 'react';
-import { ChatMessageType, Branch, SharedDebateData } from '@/types/debate';
-import { DEBATE_CONFIG } from '@/config/constants';
-
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  ChatMessageType,
+  Branch,
+  SharedDebateData,
+  DebateRole,
+  JudgeReport,
+  DebateFrame,
+} from "@/types/debate";
+import { DEBATE_CONFIG } from "@/config/constants";
+import { ROLE_ORDER, parseJudgeReport } from "@/lib/debateProtocol";
+import { getTurnContext, restoreDebateRounds, type DebateRounds } from "@/lib/debateSchedule";
+import { createManualFrame, parseDebateFrame } from "@/lib/debateFrame";
 export type { ChatMessageType };
-
+const DRAFT_KEY = "debate-draft-v1";
 export const useDebateLogic = () => {
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [activeBranchOrder, setActiveBranchOrder] = useState<string[]>([]);
-  const [topic, setTopic] = useState('');
+  const [branchRoles, setBranchRoles] = useState<Record<string, DebateRole>>(
+    {},
+  );
+  const [topic, setTopicState] = useState("");
+  const [debateFrame, setDebateFrame] = useState<DebateFrame | null>(null);
+  const [isClarifying, setIsClarifying] = useState(false);
+  const [sources, setSources] = useState("");
+  const [roundsPerExpert, setRoundsPerExpert] = useState<DebateRounds>(4);
   const [chatHistory, setChatHistory] = useState<ChatMessageType[]>([]);
   const [isDebating, setIsDebating] = useState(false);
   const [currentTurn, setCurrentTurn] = useState(0);
-  const [finalVerdict, setFinalVerdict] = useState('');
+  const [finalVerdict, setFinalVerdict] = useState("");
+  const [judgeReport, setJudgeReport] = useState<JudgeReport | null>(null);
   const [isStreamingMessage, setIsStreamingMessage] = useState(false);
-  const [currentStreamingContent, setCurrentStreamingContent] = useState('');
+  const [currentStreamingContent, setCurrentStreamingContent] = useState("");
   const [showJudgePopup, setShowJudgePopup] = useState(false);
   const [isJudgeLoading, setIsJudgeLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-
+  const [error, setError] = useState("");
+  const [ready, setReady] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  const handleBranchSelection = (branchId: string) => {
-    setSelectedBranches((prev: string[]) => {
-      if (prev.includes(branchId)) {
-        return prev.filter((id: string) => id !== branchId);
-      } else if (prev.length < DEBATE_CONFIG.MAX_EXPERTS) {
-        return [...prev, branchId];
+  const runRef = useRef(0);
+  const historyRef = useRef<ChatMessageType[]>([]);
+  const turnRef = useRef(0);
+  const draftBranchesRef = useRef<Branch[]>([]);
+  const clarifyControllerRef = useRef<AbortController | null>(null);
+  const clarifyRunRef = useRef(0);
+  const commitHistory = (history: ChatMessageType[]) => {
+    historyRef.current = history;
+    setChatHistory(history);
+  };
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (
+          typeof d.topic === "string" &&
+          Array.isArray(d.chatHistory) &&
+          d.chatHistory.every(
+            (m: ChatMessageType) =>
+              m &&
+              typeof m.content === "string" &&
+              ["user", "assistant", "judge"].includes(m.role),
+          ) &&
+          Array.isArray(d.selectedBranches) &&
+          d.selectedBranches.every((id: unknown) => typeof id === "string")
+        ) {
+          setTopicState(d.topic);
+          setDebateFrame(parseDebateFrame(d.debateFrame, true));
+          setSources(typeof d.sources === "string" ? d.sources : "");
+          setSelectedBranches(d.selectedBranches);
+          setActiveBranchOrder(
+            Array.isArray(d.activeBranchOrder) &&
+              d.activeBranchOrder.length > 0 &&
+              d.activeBranchOrder.every(
+                (id: unknown) =>
+                  typeof id === "string" && d.selectedBranches.includes(id),
+              )
+              ? d.activeBranchOrder
+              : d.selectedBranches,
+          );
+          const roles: Record<string, DebateRole> = {};
+          for (const id of d.selectedBranches) {
+            const role = d.branchRoles?.[id];
+            roles[id] = ROLE_ORDER.includes(role) ? role : "assumptions";
+          }
+          setBranchRoles(roles);
+          setRoundsPerExpert(restoreDebateRounds(d.roundsPerExpert, d.selectedBranches.length, d.chatHistory.length > 0));
+          commitHistory(d.chatHistory);
+          const turn = d.chatHistory.filter(
+            (m: ChatMessageType) => m.role === "assistant" && !m.failed,
+          ).length;
+          turnRef.current = turn;
+          setCurrentTurn(turn);
+          setFinalVerdict(
+            typeof d.finalVerdict === "string" ? d.finalVerdict : "",
+          );
+          setJudgeReport(parseJudgeReport(d.judgeReport));
+          draftBranchesRef.current = Array.isArray(d.branchDetails)
+            ? d.branchDetails.filter(
+                (b: Branch) =>
+                  b &&
+                  typeof b.id === "string" &&
+                  typeof b.name === "string" &&
+                  typeof b.description === "string",
+              )
+            : [];
+        }
       }
-      return prev;
-    });
-  };
-
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    } catch {
+      setError("Kayıtlı oturum okunamadı. Yeni tartışma başlatabilirsiniz.");
     }
-    return shuffled;
+    setReady(true);
+    const runState = runRef;
+    const abortState = abortControllerRef;
+    const clarifyState = clarifyControllerRef;
+    const clarifyRunState = clarifyRunRef;
+    return () => {
+      runState.current++;
+      abortState.current?.abort();
+      clarifyRunState.current++;
+      clarifyState.current?.abort();
+    };
+  }, []);
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({
+          topic,
+          debateFrame,
+          sources,
+          roundsPerExpert,
+          selectedBranches,
+          activeBranchOrder,
+          branchRoles,
+          chatHistory,
+          finalVerdict,
+          judgeReport,
+          branchDetails: draftBranchesRef.current,
+        }),
+      );
+    } catch {
+      setError(
+        "Otomatik kayıt yapılamadı. Tarayıcı depolama alanını kontrol edin.",
+      );
+    }
+  }, [
+    ready,
+    topic,
+    debateFrame,
+    sources,
+    roundsPerExpert,
+    selectedBranches,
+    activeBranchOrder,
+    branchRoles,
+    chatHistory,
+    finalVerdict,
+    judgeReport,
+  ]);
+  const handleBranchSelection = (id: string) => {
+    if (selectedBranches.includes(id))
+      setSelectedBranches(selectedBranches.filter((x) => x !== id));
+    else if (selectedBranches.length < DEBATE_CONFIG.MAX_EXPERTS) {
+      setSelectedBranches([...selectedBranches, id]);
+      setBranchRoles((prev) => ({
+        ...prev,
+        [id]: prev[id] || ROLE_ORDER[selectedBranches.length],
+      }));
+    }
   };
-
-  const generateNextResponse = useCallback(async (
-    turnIndex: number,
-    currentHistory: ChatMessageType[],
-    branchOrder: string[],
+  const removeBranch = (id: string) =>
+    setSelectedBranches((prev) => prev.filter((x) => x !== id));
+  const cancelClarification = () => {
+    clarifyRunRef.current++;
+    clarifyControllerRef.current?.abort();
+    setIsClarifying(false);
+  };
+  const setTopic = (value: string) => {
+    if (value === topic) return;
+    cancelClarification();
+    setTopicState(value);
+    setDebateFrame(null);
+    setError("");
+  };
+  const clarifyTopic = async () => {
+    if (!topic.trim() || topic.length > 2000 || chatHistory.length > 0) return;
+    cancelClarification();
+    const run = clarifyRunRef.current;
+    const controller = new AbortController();
+    clarifyControllerRef.current = controller;
+    setIsClarifying(true);
+    setError("");
+    try {
+      const response = await fetch("/api/clarify-topic", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        signal: controller.signal, body: JSON.stringify({ topic }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Çerçeve önerisi alınamadı. Yeniden deneyin veya kendiniz düzenleyin.");
+      const frame = parseDebateFrame(data.frame);
+      if (!frame) throw new Error("Çerçeve önerisi eksik. Yeniden deneyin veya kendiniz düzenleyin.");
+      if (clarifyRunRef.current === run && !controller.signal.aborted) setDebateFrame(frame);
+    } catch (e) {
+      if (clarifyRunRef.current === run && !controller.signal.aborted)
+        setError(e instanceof Error ? e.message : "Çerçeve oluşturulamadı.");
+    } finally {
+      if (clarifyRunRef.current === run) setIsClarifying(false);
+    }
+  };
+  const editFrameManually = () => {
+    cancelClarification();
+    setDebateFrame(createManualFrame(topic));
+    setError("");
+  };
+  const pauseDebate = () => {
+    runRef.current++;
+    abortControllerRef.current?.abort();
+    setIsDebating(false);
+    setIsStreamingMessage(false);
+    setCurrentStreamingContent("");
+  };
+  const runDebate = async (
     allBranches: Branch[],
-    retryCount: number = 0
+    order: string[],
+    initial: ChatMessageType[],
+    start: number,
   ) => {
-    if (turnIndex >= DEBATE_CONFIG.TOTAL_TURNS) return;
-
-    const branchIndex = turnIndex % branchOrder.length;
-    const branchId = branchOrder[branchIndex];
-    const selectedBranch = allBranches.find((b) => b.id === branchId);
-
-    if (!selectedBranch) return;
-
-    setIsStreamingMessage(true);
-    setCurrentStreamingContent('');
-
-    // AbortController initialization
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    if (order.length < DEBATE_CONFIG.MIN_EXPERTS) {
+      setError("Devam etmek için en az iki geçerli uzman gerekli.");
+      return;
     }
+    const run = ++runRef.current;
+    const controller = new AbortController();
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = controller;
+    setIsDebating(true);
+    setError("");
+    let history = initial;
+    try {
+      for (let turn = start; turn < roundsPerExpert * order.length; turn++) {
+        if (runRef.current !== run) return;
+        const expert =
+          allBranches.find((b) => b.id === order[turn % order.length]) ||
+          draftBranchesRef.current.find(
+            (b) => b.id === order[turn % order.length],
+          );
+        if (!expert)
+          throw new Error(
+            "Seçilen uzman bulunamadı. Yeni tartışma için uzmanları yeniden seçin.",
+          );
+        setIsStreamingMessage(true);
+        setCurrentStreamingContent("");
+        const turnContext = getTurnContext(turn, order.length, roundsPerExpert);
+        let content = "";
+        for (let attempt = 0; attempt <= DEBATE_CONFIG.MAX_RETRIES; attempt++) {
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              chatHistory: history.filter((m) => !m.failed),
+              personaDescription: expert,
+              topic,
+              debateFrame,
+              sources,
+              debateRole: branchRoles[expert.id] || "assumptions",
+              ...turnContext,
+              participatingExperts: order.map((id) =>
+                (allBranches.find((b) => b.id === id) || draftBranchesRef.current.find((b) => b.id === id))?.name,
+              ).filter(Boolean),
+            }),
+          });
+          if (!response.ok) {
+            const body = await response.json().catch(() => null);
+            if (
+              [429, 502, 503, 504].includes(response.status) &&
+              attempt < DEBATE_CONFIG.MAX_RETRIES
+            ) {
+              const delay = Math.min(
+                Number(response.headers.get("Retry-After")) ||
+                  3 * (attempt + 1),
+                60,
+              );
+              setError(
+                `Yanıt gecikti. ${delay} saniye sonra yeniden denenecek (${attempt + 1}/${DEBATE_CONFIG.MAX_RETRIES}).`,
+              );
+              await new Promise<void>((resolve, reject) => {
+                const onAbort = () => {
+                  clearTimeout(timer);
+                  reject(new DOMException("Aborted", "AbortError"));
+                };
+                const timer = setTimeout(() => {
+                  controller.signal.removeEventListener("abort", onAbort);
+                  resolve();
+                }, delay * 1000);
+                controller.signal.addEventListener("abort", onAbort, {
+                  once: true,
+                });
+              });
+              continue;
+            }
+            throw new Error(
+              body?.error ||
+                "Yanıt alınamadı. Tartışmayı kaldığı yerden sürdürebilirsiniz.",
+            );
+          }
+          const reader = response.body?.getReader();
+          if (!reader) throw new Error("Yanıt okunamadı.");
+          const decoder = new TextDecoder();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            content += decoder.decode(value, { stream: true });
+            if (runRef.current === run) setCurrentStreamingContent(content);
+          }
+          content += decoder.decode();
+          break;
+        }
+        if (runRef.current !== run) return;
+        if (content.trim().length < 10)
+          throw new Error(
+            "Uzman boş veya eksik yanıt verdi. Yeniden deneyebilirsiniz.",
+          );
+        history = [
+          ...history,
+          {
+            role: "assistant",
+            content: content.trim(),
+            branch: expert.id,
+            branchName: expert.name,
+            debateRole: branchRoles[expert.id] || "assumptions",
+            roundNumber: turnContext.roundNumber,
+            stage: turnContext.stage,
+          },
+        ];
+        commitHistory(history);
+        turnRef.current = turn + 1;
+        setCurrentTurn(turn + 1);
+        setError("");
+        setIsStreamingMessage(false);
+        setCurrentStreamingContent("");
+      }
+    } catch (e) {
+      if (runRef.current === run && !controller.signal.aborted)
+        setError(e instanceof Error ? e.message : "Tartışma duraklatıldı.");
+    } finally {
+      if (runRef.current === run) {
+        setIsDebating(false);
+        setIsStreamingMessage(false);
+        setCurrentStreamingContent("");
+      }
+    }
+  };
+  const startDebate = (allBranches: Branch[]) => {
+    if (isDebating || isJudgeLoading || isClarifying) return;
+    if (!parseDebateFrame(debateFrame)) {
+      setError("Önce tartışma çerçevesini oluşturup tez ve alt iddiaları tamamlayın.");
+      return;
+    }
+    const order = selectedBranches.filter((id) =>
+      allBranches.some((b) => b.id === id),
+    );
+    if (order.length < DEBATE_CONFIG.MIN_EXPERTS || !topic.trim() || !ready)
+      return;
+    draftBranchesRef.current = allBranches.filter((b) => order.includes(b.id));
+    setActiveBranchOrder(order);
+    setFinalVerdict("");
+    setJudgeReport(null);
+    setCurrentTurn(0);
+    turnRef.current = 0;
+    const initial: ChatMessageType[] = [
+      { role: "user", content: `Tartışma konusu: ${topic}` },
+    ];
+    commitHistory(initial);
+    void runDebate(allBranches, order, initial, 0);
+  };
+  const resumeDebate = (allBranches: Branch[]) => {
+    if (!isDebating && !isJudgeLoading)
+      void runDebate(
+        allBranches,
+        activeBranchOrder,
+        historyRef.current.filter((m) => m.role !== "judge"),
+        turnRef.current,
+      );
+  };
+  const stopDebate = async () => {
+    if (
+      isJudgeLoading ||
+      !historyRef.current.some((m) => m.role === "assistant")
+    )
+      return;
+    pauseDebate();
+    const run = runRef.current;
     const controller = new AbortController();
     abortControllerRef.current = controller;
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          chatHistory: currentHistory,
-          personaDescription: selectedBranch,
-          topic,
-          branch: selectedBranch.id,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to get response');
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No reader available');
-
-      const decoder = new TextDecoder();
-      let fullContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        fullContent += chunk;
-        if (!controller.signal.aborted) {
-          setCurrentStreamingContent(fullContent);
-        }
-      }
-
-      if (controller.signal.aborted) return;
-
-      if (!fullContent.trim() || fullContent.trim().length < 10) {
-        setCurrentStreamingContent('');
-        setIsStreamingMessage(false);
-
-        if (retryCount < DEBATE_CONFIG.MAX_RETRIES) {
-          setTimeout(() => {
-            if (!controller.signal.aborted) {
-              generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
-            }
-          }, DEBATE_CONFIG.RETRY_STREAM_DELAY_MS);
-          return;
-        } else {
-          const fallbackMessage: ChatMessageType = {
-            role: 'assistant',
-            content: `[${selectedBranch.name} bu turda yanıt veremedi - sistem hatası]`,
-            branch: selectedBranch.id,
-            branchName: selectedBranch.name,
-          };
-
-          const updatedHistory = [...currentHistory, fallbackMessage];
-          setChatHistory(updatedHistory);
-          setCurrentTurn(turnIndex + 1);
-
-          setTimeout(() => {
-            if (!controller.signal.aborted) {
-              generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
-            }
-          }, DEBATE_CONFIG.NEXT_TURN_DELAY_MS);
-          return;
-        }
-      }
-
-      const newMessage: ChatMessageType = {
-        role: 'assistant',
-        content: fullContent.trim(),
-        branch: selectedBranch.id,
-        branchName: selectedBranch.name,
-      };
-
-      const updatedHistory = [...currentHistory, newMessage];
-      setChatHistory(updatedHistory);
-      setCurrentStreamingContent('');
-      setIsStreamingMessage(false);
-      setCurrentTurn(turnIndex + 1);
-
-      setTimeout(() => {
-        if (!controller.signal.aborted) {
-          generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
-        }
-      }, DEBATE_CONFIG.NEXT_TURN_DELAY_MS);
-
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return; // Request was aborted cleanly
-      }
-
-      setIsStreamingMessage(false);
-      setCurrentStreamingContent('');
-
-      if (retryCount < DEBATE_CONFIG.MAX_RETRIES) {
-        setTimeout(() => {
-          if (!controller.signal.aborted) {
-            generateNextResponse(turnIndex, currentHistory, branchOrder, allBranches, retryCount + 1);
-          }
-        }, DEBATE_CONFIG.RETRY_ERROR_DELAY_MS);
-      } else {
-        const errorMessage: ChatMessageType = {
-          role: 'assistant',
-          content: `[${selectedBranch.name} teknik bir sorun nedeniyle bu turda yanıt veremedi]`,
-          branch: selectedBranch.id,
-          branchName: selectedBranch.name,
-        };
-
-        const updatedHistory = [...currentHistory, errorMessage];
-        setChatHistory(updatedHistory);
-        setCurrentTurn(turnIndex + 1);
-
-        setTimeout(() => {
-          if (!controller.signal.aborted) {
-            generateNextResponse(turnIndex + 1, updatedHistory, branchOrder, allBranches);
-          }
-        }, DEBATE_CONFIG.NEXT_TURN_DELAY_MS);
-      }
-    }
-  }, [topic]);
-
-  const startDebate = (allBranches: Branch[]) => {
-    if (
-      selectedBranches.length < DEBATE_CONFIG.MIN_EXPERTS ||
-      selectedBranches.length > DEBATE_CONFIG.MAX_EXPERTS ||
-      !topic.trim()
-    ) return;
-
-    const shuffledBranchOrder = shuffleArray([...selectedBranches]);
-    setActiveBranchOrder(shuffledBranchOrder);
-
-    setIsDebating(true);
-    setCurrentTurn(0);
-    setChatHistory([]);
-    setFinalVerdict('');
-
-    const initialMessage: ChatMessageType = {
-      role: 'user',
-      content: `Tartışma konusu: "${topic}". Seçilen uzmanlar tartışmaya başlıyor...`,
-    };
-    setChatHistory([initialMessage]);
-
-    setTimeout(() => {
-      generateNextResponse(0, [initialMessage], shuffledBranchOrder, allBranches);
-    }, DEBATE_CONFIG.START_DEBATE_DELAY_MS);
-  };
-
-  const stopDebate = async () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    setIsDebating(false);
-    setIsStreamingMessage(false);
     setShowJudgePopup(true);
     setIsJudgeLoading(true);
-    setFinalVerdict('');
-
+    setError("");
     try {
-      const response = await fetch('/api/judge', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch("/api/judge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
-          chatHistory,
           topic,
+          debateFrame,
+          sources,
+          chatHistory: historyRef.current.filter(
+            (m) => m.role !== "judge" && !m.failed,
+          ),
         }),
       });
-
-      if (!response.ok) throw new Error('Failed to get judge verdict');
-
       const data = await response.json();
+      if (!response.ok)
+        throw new Error(
+          data.error ||
+            "Hakem değerlendirmesi alınamadı. Yeniden deneyebilirsiniz.",
+        );
+      if (runRef.current !== run) return;
       setFinalVerdict(data.verdict);
-      setIsJudgeLoading(false);
-
-      const judgeMessage: ChatMessageType = {
-        role: 'judge',
-        content: data.verdict,
-      };
-      setChatHistory((prev: ChatMessageType[]) => [...prev, judgeMessage]);
-
-    } catch {
-      setFinalVerdict('Hakem kararı alınırken bir hata oluştu.');
-      setIsJudgeLoading(false);
+      setJudgeReport(data.report || null);
+      commitHistory([
+        ...historyRef.current.filter((m) => m.role !== "judge"),
+        { role: "judge", content: data.verdict },
+      ]);
+    } catch (e) {
+      if (runRef.current === run && !controller.signal.aborted) {
+        setError(e instanceof Error ? e.message : "Hakem yanıtı alınamadı.");
+        setShowJudgePopup(false);
+      }
+    } finally {
+      if (runRef.current === run) setIsJudgeLoading(false);
     }
   };
-
   const resetDebate = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+    cancelClarification();
+    pauseDebate();
     setSelectedBranches([]);
     setActiveBranchOrder([]);
-    setTopic('');
-    setChatHistory([]);
-    setIsDebating(false);
+    setBranchRoles({});
+    setTopic("");
+    setDebateFrame(null);
+    setSources("");
+    setRoundsPerExpert(4);
+    commitHistory([]);
     setCurrentTurn(0);
-    setFinalVerdict('');
-    setIsStreamingMessage(false);
-    setCurrentStreamingContent('');
+    turnRef.current = 0;
+    setFinalVerdict("");
+    setJudgeReport(null);
+    setError("");
     setShowJudgePopup(false);
     setIsJudgeLoading(false);
-  };
-
-  const closeJudgePopup = () => {
-    setShowJudgePopup(false);
-  };
-
-  const openShareModal = () => {
-    setShowShareModal(true);
-  };
-
-  const closeShareModal = () => {
     setShowShareModal(false);
+    draftBranchesRef.current = [];
   };
-
-  const generateShareData = (allBranches: Branch[]): SharedDebateData => {
-    const selectedBranchDetails = allBranches.filter(branch =>
-      selectedBranches.includes(branch.id)
-    );
-
-    return {
+  const generateShareData = useCallback(
+    (allBranches: Branch[]): SharedDebateData => ({
       topic,
+      debateFrame,
+      sources,
+      roundsPerExpert,
       chatHistory,
       selectedBranches,
-      branchDetails: selectedBranchDetails,
+      branchRoles,
+      judgeReport,
+      branchDetails: selectedBranches
+        .map(
+          (id) =>
+            allBranches.find((b) => b.id === id) ||
+            draftBranchesRef.current.find((b) => b.id === id),
+        )
+        .filter((b): b is Branch => !!b),
       finalVerdict,
       timestamp: Date.now(),
-    };
-  };
-
+    }),
+    [
+      topic,
+      debateFrame,
+      sources,
+      roundsPerExpert,
+      chatHistory,
+      selectedBranches,
+      branchRoles,
+      judgeReport,
+      finalVerdict,
+    ],
+  );
   return {
     selectedBranches,
     activeBranchOrder,
+    branchRoles,
+    setBranchRoles,
     topic,
     setTopic,
+    debateFrame,
+    setDebateFrame,
+    isClarifying,
+    clarifyTopic,
+    editFrameManually,
+    sources,
+    setSources,
+    roundsPerExpert,
+    setRoundsPerExpert,
+    totalTurns: roundsPerExpert * (activeBranchOrder.length || selectedBranches.length),
     chatHistory,
     isDebating,
     currentTurn,
     finalVerdict,
+    judgeReport,
     isStreamingMessage,
     currentStreamingContent,
     showJudgePopup,
     isJudgeLoading,
     showShareModal,
+    error,
+    ready,
     chatEndRef,
     handleBranchSelection,
+    removeBranch,
     startDebate,
+    resumeDebate,
+    pauseDebate,
     stopDebate,
     resetDebate,
-    closeJudgePopup,
-    openShareModal,
-    closeShareModal,
+    openJudgePopup: () => setShowJudgePopup(true),
+    closeJudgePopup: () => setShowJudgePopup(false),
+    openShareModal: () => setShowShareModal(true),
+    closeShareModal: () => setShowShareModal(false),
     generateShareData,
   };
 };

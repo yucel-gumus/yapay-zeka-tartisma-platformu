@@ -1,38 +1,52 @@
-import React from 'react';
-import { ChatMessageType } from '@/types/debate';
-import { JudgeIcon, RobotIcon, UserAvatarIcon } from './ui/Icons';
+import React from "react";
+import { DEBATE_ROLES } from "@/lib/debateProtocol";
+import { STAGE_LABELS } from "@/lib/debateSchedule";
+import JudgeReportView from "./JudgeReportView";
+import { ChatMessageType, JudgeReport } from "@/types/debate";
+import { JudgeIcon, RobotIcon, UserAvatarIcon } from "./ui/Icons";
 
 interface ChatMessageProps {
   message: ChatMessageType;
   isStreaming?: boolean;
+  judgeReport?: JudgeReport | null;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isStreaming = false }) => {
-  if (message.role === 'judge') {
+const ChatMessage: React.FC<ChatMessageProps> = ({
+  message,
+  isStreaming = false,
+  judgeReport,
+}) => {
+  if (message.role === "judge") {
     return (
       <div className="mb-6 p-6 bg-[#9BCEC1] border-3 border-[#FFB6A6] rounded-3xl shadow-md">
         <div className="flex items-center mb-3 space-x-3">
           <div className="p-2 bg-[#FFB6A6] text-[#2C1A18] rounded-2xl shadow-xs">
             <JudgeIcon size={22} />
           </div>
-          <span className="font-extrabold text-[#2C1A18] text-xl">Hakem Kararı</span>
+          <span className="font-extrabold text-[#2C1A18] text-xl">
+            Hakem Kararı
+          </span>
         </div>
         <div className="text-[#2C1A18] text-lg leading-relaxed font-bold">
-          {message.content}
+          {judgeReport ? (
+            <JudgeReportView report={judgeReport} />
+          ) : (
+            message.content
+          )}
           {isStreaming && <span className="animate-pulse">|</span>}
         </div>
       </div>
     );
   }
 
-  const isUser = message.role === 'user';
+  const isUser = message.role === "user";
 
   return (
     <div
       className={`mb-4 p-5 rounded-3xl border-2 transition-all shadow-xs ${
         isUser
-          ? 'bg-[#FFB6A6]/40 border-[#FFB6A6] text-[#2C1A18]'
-          : 'bg-[#FFB6A6]/20 border-[#FFB6A6]/80 text-[#2C1A18]'
+          ? "bg-[#FFB6A6]/40 border-[#FFB6A6] text-[#2C1A18]"
+          : "bg-white/50 border-[#FFB6A6]/40 text-[#2C1A18]"
       }`}
     >
       <div className="flex items-center justify-between mb-2">
@@ -41,18 +55,31 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isStreaming = false 
             {isUser ? <UserAvatarIcon size={18} /> : <RobotIcon size={18} />}
           </div>
           <span className="font-extrabold text-[#2C1A18] text-base">
-            {message.branchName || (isUser ? 'Tartışma Konusu & Başlangıcı' : 'Uzman')}
+            {message.branchName ||
+              (isUser ? "Tartışma Konusu & Başlangıcı" : "Uzman")}
           </span>
         </div>
         {message.branchName && (
           <span className="text-xs bg-[#9BCEC1] text-[#2C1A18] font-extrabold px-3 py-1 rounded-xl shadow-xs">
-            Uzman Görüşü
+            {message.debateRole
+              ? DEBATE_ROLES[message.debateRole]?.label || "Uzman Görüşü"
+              : "Uzman Görüşü"}
           </span>
         )}
       </div>
-      <div className="text-[#2C1A18] leading-relaxed font-semibold text-base whitespace-pre-wrap pl-1">
+      <div className="text-[#2C1A18] leading-relaxed font-normal text-base whitespace-pre-wrap pl-1">
+        {message.stage && STAGE_LABELS[message.stage] && (
+          <p className="mb-2 text-xs font-semibold text-[#5E3D38]">
+            {message.roundNumber ? `Tur ${message.roundNumber} · ` : ""}{STAGE_LABELS[message.stage]}
+          </p>
+        )}
         {message.content}
-        {isStreaming && <span className="animate-pulse font-extrabold text-[#9BCEC1]"> |</span>}
+        {isStreaming && (
+          <span className="animate-pulse font-extrabold text-[#9BCEC1]">
+            {" "}
+            |
+          </span>
+        )}
       </div>
     </div>
   );

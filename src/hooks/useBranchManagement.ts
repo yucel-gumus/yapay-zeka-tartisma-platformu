@@ -1,45 +1,60 @@
-import { useState, useEffect } from 'react';
-import { Branch } from '@/types/debate';
-import { STORAGE_KEYS } from '@/config/constants';
+import { useState, useEffect } from "react";
+import { Branch } from "@/types/debate";
+import { STORAGE_KEYS } from "@/config/constants";
 
 export type { Branch };
 
 export const useBranchManagement = () => {
+  const [error, setError] = useState("");
   const [customBranches, setCustomBranches] = useState<Branch[]>([]);
   const [showAddBranchModal, setShowAddBranchModal] = useState(false);
-  const [newBranchName, setNewBranchName] = useState('');
-  const [newBranchDescription, setNewBranchDescription] = useState('');
+  const [newBranchName, setNewBranchName] = useState("");
+  const [newBranchDescription, setNewBranchDescription] = useState("");
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
 
   useEffect(() => {
-    const savedBranches = localStorage.getItem(STORAGE_KEYS.CUSTOM_BRANCHES);
-    if (savedBranches) {
-      try {
-        setCustomBranches(JSON.parse(savedBranches));
-      } catch {
-        setCustomBranches([]);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CUSTOM_BRANCHES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          Array.isArray(parsed) &&
+          parsed.every(
+            (b) =>
+              b &&
+              typeof b.id === "string" &&
+              typeof b.name === "string" &&
+              typeof b.description === "string",
+          )
+        )
+          setCustomBranches(parsed);
       }
+    } catch {
+      setError(
+        "Kayıtlı uzmanlar okunamadı. Yeni bir uzman oluşturabilirsiniz.",
+      );
     }
   }, []);
 
   const generateBranchId = (name: string) => {
     return name
       .toLowerCase()
-      .replace(/[^\p{L}0-9\s]/gu, '')
-      .replace(/\s+/g, '-')
+      .replace(/[^\p{L}0-9\s]/gu, "")
+      .replace(/\s+/g, "-")
       .substring(0, 50);
   };
 
   const generateDescription = async () => {
     if (!newBranchName.trim()) return;
 
+    setError("");
     setIsGeneratingDescription(true);
     try {
-      const response = await fetch('/api/generate-description', {
-        method: 'POST',
+      const response = await fetch("/api/generate-description", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ name: newBranchName }),
       });
@@ -47,9 +62,14 @@ export const useBranchManagement = () => {
       if (response.ok) {
         const data = await response.json();
         setNewBranchDescription(data.description);
+      } else {
+        const data = await response.json().catch(() => null);
+        setError(
+          data?.error || "Açıklama alınamadı. Yeniden deneyebilirsiniz.",
+        );
       }
     } catch {
-      // Hata durumunda sakince devam et
+      setError("Açıklama hizmetine ulaşılamadı. Yeniden deneyebilirsiniz.");
     } finally {
       setIsGeneratingDescription(false);
     }
@@ -61,15 +81,19 @@ export const useBranchManagement = () => {
     let updatedCustomBranches: Branch[];
 
     if (editingBranch) {
-      updatedCustomBranches = customBranches.map(branch =>
+      updatedCustomBranches = customBranches.map((branch) =>
         branch.id === editingBranch.id
-          ? { ...branch, name: newBranchName.trim(), description: newBranchDescription.trim() }
-          : branch
+          ? {
+              ...branch,
+              name: newBranchName.trim(),
+              description: newBranchDescription.trim(),
+            }
+          : branch,
       );
       setEditingBranch(null);
     } else {
       const newBranch: Branch = {
-        id: generateBranchId(newBranchName),
+        id: `${generateBranchId(newBranchName)}-${crypto.randomUUID()}`,
         name: newBranchName.trim(),
         description: newBranchDescription.trim(),
       };
@@ -77,17 +101,24 @@ export const useBranchManagement = () => {
     }
 
     setCustomBranches(updatedCustomBranches);
-    localStorage.setItem(STORAGE_KEYS.CUSTOM_BRANCHES, JSON.stringify(updatedCustomBranches));
+    try {
+      localStorage.setItem(
+        STORAGE_KEYS.CUSTOM_BRANCHES,
+        JSON.stringify(updatedCustomBranches),
+      );
+    } catch {
+      setError("Uzmanlar tarayıcıya kaydedilemedi.");
+    }
 
-    setNewBranchName('');
-    setNewBranchDescription('');
+    setNewBranchName("");
+    setNewBranchDescription("");
     setShowAddBranchModal(false);
   };
 
   const closeAddBranchModal = () => {
     setShowAddBranchModal(false);
-    setNewBranchName('');
-    setNewBranchDescription('');
+    setNewBranchName("");
+    setNewBranchDescription("");
     setEditingBranch(null);
   };
 
@@ -99,13 +130,23 @@ export const useBranchManagement = () => {
   };
 
   const deleteBranch = (branchId: string) => {
-    const updatedCustomBranches = customBranches.filter(branch => branch.id !== branchId);
+    const updatedCustomBranches = customBranches.filter(
+      (branch) => branch.id !== branchId,
+    );
     setCustomBranches(updatedCustomBranches);
-    localStorage.setItem(STORAGE_KEYS.CUSTOM_BRANCHES, JSON.stringify(updatedCustomBranches));
+    try {
+      localStorage.setItem(
+        STORAGE_KEYS.CUSTOM_BRANCHES,
+        JSON.stringify(updatedCustomBranches),
+      );
+    } catch {
+      setError("Uzmanlar tarayıcıya kaydedilemedi.");
+    }
   };
 
   return {
     customBranches,
+    error,
     showAddBranchModal,
     setShowAddBranchModal,
     newBranchName,
