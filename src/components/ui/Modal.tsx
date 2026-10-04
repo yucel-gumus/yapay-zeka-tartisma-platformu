@@ -20,6 +20,9 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!isOpen) return;
     const previousOverflow = document.body.style.overflow;
@@ -36,7 +39,7 @@ export const Modal: React.FC<ModalProps> = ({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
       if (event.key === "Tab") {
         const elements = focusable();
@@ -64,7 +67,7 @@ export const Modal: React.FC<ModalProps> = ({
       document.body.style.overflow = previousOverflow;
       previous?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
   if (!isOpen) return null;
 
   return (
