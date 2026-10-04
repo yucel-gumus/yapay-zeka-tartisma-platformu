@@ -1,7 +1,5 @@
 import { SharedDebateData } from "@/types/debate";
-import { parseJudgeReport } from "@/lib/debateProtocol";
-import { restoreDebateRounds } from "@/lib/debateSchedule";
-import { parseDebateFrame } from "@/lib/debateFrame";
+import { parseSharedDebate } from "@/lib/debateState";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -11,6 +9,7 @@ import {
   query,
   where,
   getDocs,
+  limit,
 } from "firebase/firestore";
 
 export type { SharedDebateData };
@@ -21,17 +20,26 @@ export const saveDebateToFirebase = async (
   data: SharedDebateData,
   debateId = generateShortId(),
 ): Promise<string> => {
+  const ref = doc(db, "debates", debateId);
   try {
-    const shortId = debateId;
-
-    await setDoc(doc(db, "debates", shortId), {
-      id: shortId,
+    await setDoc(ref, {
+      id: debateId,
       ...data,
       createdAt: new Date().toISOString(),
     });
-
-    return shortId;
-  } catch {
+    return debateId;
+  } catch (error) {
+    // firestore.rules is create-only. A retry after a write that already landed
+    // is denied; confirm the document exists and treat it as saved.
+    try {
+      if (
+        (error as { code?: string })?.code === "permission-denied" &&
+        (await getDoc(ref)).exists()
+      )
+        return debateId;
+    } catch {
+      /* Fall through to the generic save error. */
+    }
     throw new Error("Tartışma kaydedilemedi");
   }
 };
@@ -44,7 +52,7 @@ export const loadDebateFromFirebase = async (
     const directDoc = await getDoc(doc(db, "debates", debateId));
     const querySnapshot = directDoc.exists()
       ? null
-      : await getDocs(query(debatesRef, where("id", "==", debateId)));
+      : await getDocs(query(debatesRef, where("id", "==", debateId), limit(1)));
 
     if (!directDoc.exists() && (!querySnapshot || querySnapshot.empty)) {
       return null;
@@ -53,19 +61,7 @@ export const loadDebateFromFirebase = async (
     const docData = directDoc.exists()
       ? directDoc.data()
       : querySnapshot!.docs[0].data();
-    return {
-      debateFrame: parseDebateFrame(docData.debateFrame),
-      roundsPerExpert: restoreDebateRounds(docData.roundsPerExpert, docData.selectedBranches?.length || 0, true),
-      sources: docData.sources || "",
-      branchRoles: docData.branchRoles || {},
-      judgeReport: parseJudgeReport(docData.judgeReport),
-      topic: docData.topic,
-      chatHistory: docData.chatHistory,
-      selectedBranches: docData.selectedBranches,
-      branchDetails: docData.branchDetails,
-      finalVerdict: docData.finalVerdict,
-      timestamp: docData.timestamp,
-    };
+    return parseSharedDebate(docData);
   } catch {
     throw new Error(
       "Tartışma yüklenemedi. Bağlantınızı kontrol edip yeniden deneyin.",

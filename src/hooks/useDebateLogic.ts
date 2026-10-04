@@ -11,6 +11,11 @@ import { DEBATE_CONFIG } from "@/config/constants";
 import { ROLE_ORDER, parseJudgeReport } from "@/lib/debateProtocol";
 import { getTurnContext, restoreDebateRounds, type DebateRounds } from "@/lib/debateSchedule";
 import { createManualFrame, parseDebateFrame } from "@/lib/debateFrame";
+import {
+  parseBranches,
+  parseChatHistory,
+  parseStringList,
+} from "@/lib/debateState";
 export type { ChatMessageType };
 const DRAFT_KEY = "debate-draft-v1";
 export const useDebateLogic = () => {
@@ -36,7 +41,6 @@ export const useDebateLogic = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const runRef = useRef(0);
   const historyRef = useRef<ChatMessageType[]>([]);
@@ -53,58 +57,35 @@ export const useDebateLogic = () => {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) {
         const d = JSON.parse(raw);
-        if (
-          typeof d.topic === "string" &&
-          Array.isArray(d.chatHistory) &&
-          d.chatHistory.every(
-            (m: ChatMessageType) =>
-              m &&
-              typeof m.content === "string" &&
-              ["user", "assistant", "judge"].includes(m.role),
-          ) &&
-          Array.isArray(d.selectedBranches) &&
-          d.selectedBranches.every((id: unknown) => typeof id === "string")
-        ) {
+        const history = parseChatHistory(d?.chatHistory);
+        const selected = parseStringList(d?.selectedBranches);
+        if (typeof d.topic === "string" && history && selected) {
           setTopicState(d.topic);
           setDebateFrame(parseDebateFrame(d.debateFrame, true));
           setSources(typeof d.sources === "string" ? d.sources : "");
-          setSelectedBranches(d.selectedBranches);
+          setSelectedBranches(selected);
+          const order = parseStringList(d.activeBranchOrder);
           setActiveBranchOrder(
-            Array.isArray(d.activeBranchOrder) &&
-              d.activeBranchOrder.length > 0 &&
-              d.activeBranchOrder.every(
-                (id: unknown) =>
-                  typeof id === "string" && d.selectedBranches.includes(id),
-              )
-              ? d.activeBranchOrder
-              : d.selectedBranches,
+            order?.length && order.every((id) => selected.includes(id))
+              ? order
+              : selected,
           );
           const roles: Record<string, DebateRole> = {};
-          for (const id of d.selectedBranches) {
+          for (const id of selected) {
             const role = d.branchRoles?.[id];
             roles[id] = ROLE_ORDER.includes(role) ? role : "assumptions";
           }
           setBranchRoles(roles);
-          setRoundsPerExpert(restoreDebateRounds(d.roundsPerExpert, d.selectedBranches.length, d.chatHistory.length > 0));
-          commitHistory(d.chatHistory);
-          const turn = d.chatHistory.filter(
-            (m: ChatMessageType) => m.role === "assistant" && !m.failed,
-          ).length;
+          setRoundsPerExpert(restoreDebateRounds(d.roundsPerExpert, selected.length, history.length > 0));
+          commitHistory(history);
+          const turn = history.filter((m) => m.role === "assistant").length;
           turnRef.current = turn;
           setCurrentTurn(turn);
           setFinalVerdict(
             typeof d.finalVerdict === "string" ? d.finalVerdict : "",
           );
           setJudgeReport(parseJudgeReport(d.judgeReport));
-          draftBranchesRef.current = Array.isArray(d.branchDetails)
-            ? d.branchDetails.filter(
-                (b: Branch) =>
-                  b &&
-                  typeof b.id === "string" &&
-                  typeof b.name === "string" &&
-                  typeof b.description === "string",
-              )
-            : [];
+          draftBranchesRef.current = parseBranches(d.branchDetails) ?? [];
         }
       }
     } catch {
@@ -164,10 +145,16 @@ export const useDebateLogic = () => {
       setSelectedBranches(selectedBranches.filter((x) => x !== id));
     else if (selectedBranches.length < DEBATE_CONFIG.MAX_EXPERTS) {
       setSelectedBranches([...selectedBranches, id]);
-      setBranchRoles((prev) => ({
-        ...prev,
-        [id]: prev[id] || ROLE_ORDER[selectedBranches.length],
-      }));
+      setBranchRoles((prev) => {
+        const taken = selectedBranches.map((x) => prev[x]);
+        const free = prev[id] && !taken.includes(prev[id]);
+        return {
+          ...prev,
+          [id]: free
+            ? prev[id]
+            : ROLE_ORDER.find((role) => !taken.includes(role)) ?? "assumptions",
+        };
+      });
     }
   };
   const removeBranch = (id: string) =>
@@ -197,7 +184,7 @@ export const useDebateLogic = () => {
         method: "POST", headers: { "Content-Type": "application/json" },
         signal: controller.signal, body: JSON.stringify({ topic }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Çerçeve önerisi alınamadı. Yeniden deneyin veya kendiniz düzenleyin.");
       const frame = parseDebateFrame(data.frame);
       if (!frame) throw new Error("Çerçeve önerisi eksik. Yeniden deneyin veya kendiniz düzenleyin.");
@@ -260,7 +247,7 @@ export const useDebateLogic = () => {
             headers: { "Content-Type": "application/json" },
             signal: controller.signal,
             body: JSON.stringify({
-              chatHistory: history.filter((m) => !m.failed),
+              chatHistory: history,
               personaDescription: expert,
               topic,
               debateFrame,
@@ -319,7 +306,8 @@ export const useDebateLogic = () => {
           break;
         }
         if (runRef.current !== run) return;
-        if (content.trim().length < 10)
+        content = content.trim();
+        if (content.length < 10)
           throw new Error(
             "Uzman boş veya eksik yanıt verdi. Yeniden deneyebilirsiniz.",
           );
@@ -327,7 +315,7 @@ export const useDebateLogic = () => {
           ...history,
           {
             role: "assistant",
-            content: content.trim(),
+            content,
             branch: expert.id,
             branchName: expert.name,
             debateRole: branchRoles[expert.id] || "assumptions",
@@ -407,12 +395,10 @@ export const useDebateLogic = () => {
           topic,
           debateFrame,
           sources,
-          chatHistory: historyRef.current.filter(
-            (m) => m.role !== "judge" && !m.failed,
-          ),
+          chatHistory: historyRef.current.filter((m) => m.role !== "judge"),
         }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (!response.ok)
         throw new Error(
           data.error ||
@@ -440,7 +426,7 @@ export const useDebateLogic = () => {
     setSelectedBranches([]);
     setActiveBranchOrder([]);
     setBranchRoles({});
-    setTopic("");
+    setTopicState("");
     setDebateFrame(null);
     setSources("");
     setRoundsPerExpert(4);
@@ -516,7 +502,6 @@ export const useDebateLogic = () => {
     showShareModal,
     error,
     ready,
-    chatEndRef,
     handleBranchSelection,
     removeBranch,
     startDebate,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import ChatMessage from "@/components/ChatMessage";
@@ -18,7 +18,7 @@ import {
   CloseIcon,
 } from "@/components/ui/Icons";
 
-function DebateContent() {
+export default function SharedDebatePage() {
   const params = useParams();
   const [debateData, setDebateData] = useState<SharedDebateData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,10 +75,7 @@ function DebateContent() {
             Tartışma Bulunamadı
           </h1>
           <p className="text-[#5E3D38] font-semibold mb-6">{error}</p>
-          <Link
-            href="/"
-            className="inline-block bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold py-3 px-6 rounded-2xl transition-all shadow-sm"
-          >
+          <Link href="/" className="btn btn-mint">
             Ana Sayfaya Dön
           </Link>
         </div>
@@ -104,10 +101,7 @@ function DebateContent() {
               <ShareIcon size={28} className="text-[#2C1A18]" />
               Paylaşılan Tartışma
             </h1>
-            <Link
-              href="/"
-              className="bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold py-3 px-6 rounded-2xl transition-all shadow-sm"
-            >
+            <Link href="/" className="btn btn-mint">
               Yeni Tartışma Başlat
             </Link>
           </div>
@@ -193,39 +187,16 @@ function DebateContent() {
               <JudgeIcon size={24} />
               Hakem Kararı
             </h3>
-            <div className="rounded-xl p-1">
-              <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap text-[#2C1A18] font-semibold text-lg leading-relaxed">
-                  {debateData.judgeReport ? (
-                    <JudgeReportView report={debateData.judgeReport} />
-                  ) : (
-                    finalVerdictText
-                  )}
-                </div>
-              </div>
-            </div>
+            {debateData.judgeReport ? (
+              <JudgeReportView report={debateData.judgeReport} />
+            ) : (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed break-words">
+                {finalVerdictText}
+              </p>
+            )}
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-export default function SharedDebatePage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#FFEBD3] flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#9BCEC1] border-t-transparent mx-auto mb-4"></div>
-            <p className="text-[#2C1A18] font-semibold text-lg">
-              Sayfa yükleniyor...
-            </p>
-          </div>
-        </div>
-      }
-    >
-      <DebateContent />
-    </Suspense>
   );
 }

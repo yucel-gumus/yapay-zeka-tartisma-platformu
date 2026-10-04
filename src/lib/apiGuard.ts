@@ -1,6 +1,6 @@
 import type { ChatMessageType } from "@/types/debate";
-import { STAGE_LABELS } from "@/lib/debateSchedule";
 import { parseDebateFrame } from "@/lib/debateFrame";
+import { parseChatHistory } from "@/lib/debateState";
 import type { DebateFrame } from "@/types/debate";
 const buckets = new Map<string, { count: number; expires: number }>();
 export class ApiError extends Error {
@@ -15,16 +15,18 @@ export class ApiError extends Error {
 export async function readInput(
   request: Request,
 ): Promise<Record<string, unknown>> {
+  // Browsers always send Origin on POST. A missing Origin means a non-browser
+  // client calling the AI proxy directly; reject it before any upstream work.
   const origin = request.headers.get("origin");
-  if (origin) {
-    const expected = new URL(request.url);
-    // Next.js may normalize the request URL to localhost in development.
-    // Host is the browser's actual destination; do not trust forwarded host headers.
-    const host = request.headers.get("host");
-    if (host) expected.host = host;
-    if (origin !== expected.origin)
-      throw new ApiError(403, "Bu kaynaktan gelen isteğe izin verilmiyor.");
-  }
+  if (!origin)
+    throw new ApiError(403, "Bu kaynaktan gelen isteğe izin verilmiyor.");
+  const expected = new URL(request.url);
+  // Next.js may normalize the request URL to localhost in development.
+  // Host is the browser's actual destination; do not trust forwarded host headers.
+  const host = request.headers.get("host");
+  if (host) expected.host = host;
+  if (origin !== expected.origin)
+    throw new ApiError(403, "Bu kaynaktan gelen isteğe izin verilmiyor.");
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const now = Date.now();
@@ -81,27 +83,9 @@ export function textField(
   return value.trim();
 }
 export function historyField(value: unknown): ChatMessageType[] {
-  if (
-    !Array.isArray(value) ||
-    value.length > 30 ||
-    !value.every(
-      (m) =>
-        m &&
-        ["user", "assistant", "judge"].includes(m.role) &&
-        (m.roundNumber === undefined || (Number.isInteger(m.roundNumber) && m.roundNumber >= 1 && m.roundNumber <= 6)) &&
-        (m.stage === undefined || (typeof m.stage === "string" && Object.prototype.hasOwnProperty.call(STAGE_LABELS, m.stage))) &&
-        (m.debateRole === undefined ||
-          ["advocate", "critic", "assumptions", "evidence"].includes(
-            m.debateRole,
-          )) &&
-        typeof m.content === "string" &&
-        m.content.length <= 12_000 &&
-        (m.branchName === undefined ||
-          (typeof m.branchName === "string" && m.branchName.length <= 150)),
-    )
-  )
-    throw new ApiError(400, "Geçersiz tartışma geçmişi.");
-  return value.filter((m) => !m.failed);
+  const history = parseChatHistory(value);
+  if (!history) throw new ApiError(400, "Geçersiz tartışma geçmişi.");
+  return history.filter((m) => !m.failed);
 }
 export function frameField(value: unknown): DebateFrame | null {
   if (value === undefined || value === null) return null;

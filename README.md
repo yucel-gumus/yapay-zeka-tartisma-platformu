@@ -85,9 +85,9 @@ Yapılandırılmış hakem çıktısı:
 
 API gövdesi en fazla 150 KB; konu 2.000, kaynak notları ve uzman açıklaması 4.000, uzman adı 150 karakter olabilir. Geçmiş en fazla 30 mesaj ve mesaj başına 12.000 karakter kabul eder. Gateway çağrıları 115 saniye sonra zaman aşımına uğrar. Geçici HTTP hatalarında istemci sınırlı sayıda tekrar dener; diğer hatalarda oturum korunur.
 
-API rotaları süreç belleğinde IP başına dakikada 30 istek sınırı uygular. **Bu sınır tek süreç içindir; dağıtık/serverless kurulumda global kota sağlamaz.** `x-forwarded-for` yalnızca güvenilir ters proxy tarafından belirlenmelidir. Üretimde gateway veya hosting katmanında dağıtık limit ve bütçe kontrolü gerekir. Bu uygulama kullanıcı kimlik doğrulaması içermez.
+API rotaları yalnızca aynı kökenden gelen tarayıcı isteklerini kabul eder; `Origin` başlığı olmayan istekler (ör. doğrudan `curl`) 403 alır. Bu, başlığı elle taklit eden istemcileri durdurmaz. Ayrıca süreç belleğinde IP başına dakikada 30 istek sınırı vardır. **Bu sınır tek süreç içindir; dağıtık/serverless kurulumda global kota sağlamaz.** `x-forwarded-for` yalnızca güvenilir ters proxy tarafından belirlenmelidir. Üretimde Vercel Firewall rate-limit kuralı (`/api/*`) ve backend tarafında günlük bütçe/kota gerekir. Bu uygulama kullanıcı kimlik doğrulaması içermez.
 
-Firestore'a yazma/okuma istemci SDK'sıyla yapılır. Firebase güvenlik kuralları bu depoda yönetilmez; üretim projesinde veri boyutu, izin verilen alanlar ve yazma yetkileri ayrıca sınırlandırılmalıdır. Paylaşılan tartışmalar herkese açık olmak üzere tasarlanmıştır. Yeni kayıtlar UUID belge kimliği kullanır; eski kısa bağlantılar sorgu ile okunmaya devam eder. Yeniden denemeler aynı belge kimliğine yazar; Firebase kuralları aynı kaydın tekrar yazılmasına uygun olmalıdır.
+Firestore'a yazma/okuma istemci SDK'sıyla yapılır. Güvenlik kuralları `firestore.rules` dosyasındadır (`npx firebase-tools deploy --only firestore:rules --project <project-id>`): paylaşımlar herkese açık okunur, yalnızca bir kez oluşturulabilir (alan whitelist'i + boyut limitleri), güncelleme ve silme kapalıdır. Yeni kayıtlar UUID belge kimliği kullanır; eski kısa bağlantılar `limit(1)` sorgusuyla okunmaya devam eder. Yeniden denemeler aynı belge kimliğini kullanır; kayıt zaten oluşmuşsa kuralın reddi başarı sayılır.
 
 ## Kontroller
 

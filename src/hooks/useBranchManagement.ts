@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Branch } from "@/types/debate";
 import { STORAGE_KEYS } from "@/config/constants";
+import { parseBranches } from "@/lib/debateState";
 
 export type { Branch };
 
@@ -16,20 +17,8 @@ export const useBranchManagement = () => {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.CUSTOM_BRANCHES);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (
-          Array.isArray(parsed) &&
-          parsed.every(
-            (b) =>
-              b &&
-              typeof b.id === "string" &&
-              typeof b.name === "string" &&
-              typeof b.description === "string",
-          )
-        )
-          setCustomBranches(parsed);
-      }
+      const parsed = saved ? parseBranches(JSON.parse(saved)) : null;
+      if (parsed) setCustomBranches(parsed);
     } catch {
       setError(
         "Kayıtlı uzmanlar okunamadı. Yeni bir uzman oluşturabilirsiniz.",

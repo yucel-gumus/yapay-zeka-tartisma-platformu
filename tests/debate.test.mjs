@@ -64,9 +64,10 @@ const report = {
   claimsToVerify: ["Deney sonucunu kontrol et."],
 };
 function request(body, ip = crypto.randomUUID()) {
+  // Browsers always send Origin on POST; the API rejects requests without it.
   return new Request("http://localhost/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-forwarded-for": ip },
+    headers: { "Content-Type": "application/json", Origin: "http://localhost", "x-forwarded-for": ip },
     body: JSON.stringify(body),
   });
 }
@@ -137,7 +138,7 @@ test("request parser rejects malformed JSON and oversized bodies", async () => {
     guard.readInput(
       new Request("http://localhost/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Origin: "http://localhost" },
         body: "{",
       }),
     ),
@@ -146,6 +147,18 @@ test("request parser rejects malformed JSON and oversized bodies", async () => {
   await assert.rejects(
     guard.readInput(request({ topic: "x".repeat(150_000) })),
     (e) => e.status === 413,
+  );
+});
+test("requests without an Origin header are rejected before any work", async () => {
+  await assert.rejects(
+    guard.readInput(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-forwarded-for": crypto.randomUUID() },
+        body: JSON.stringify({ topic: "Tez" }),
+      }),
+    ),
+    (e) => e.status === 403,
   );
 });
 test("request quota returns retry metadata", async () => {
@@ -374,7 +387,9 @@ function loadWithMocks(path, mocks) {
   }).outputText;
   const module = { exports: {} };
   new Function("require", "module", "exports", code)(
-    (name) => mocks[name] || nativeRequire(name),
+    (name) =>
+      mocks[name] ||
+      (name.startsWith("@/") ? load(`src/${name.slice(2)}`) : nativeRequire(name)),
     module,
     module.exports,
   );
@@ -388,9 +403,11 @@ const sharedData = {
   finalVerdict: "Sonuç",
   timestamp: 1,
 };
-test("share retries reuse the supplied document ID and surface write errors", async () => {
-  const writes = [];
+test("share retries reuse the supplied document ID under create-only rules and surface write errors", async () => {
+  // Emulates firestore.rules: create is allowed once, rewriting an existing doc is denied.
+  const stored = new Map();
   let fail = false;
+  const denied = () => Object.assign(new Error("denied"), { code: "permission-denied" });
   const share = loadWithMocks("src/utils/shareUtils", {
     "@/lib/firebase": { db: {} },
     "@/lib/debateProtocol": protocol,
@@ -400,21 +417,37 @@ test("share retries reuse the supplied document ID and surface write errors", as
       doc: (_, collection, id) => ({ collection, id }),
       setDoc: async (ref, data) => {
         if (fail) throw new Error("offline");
-        writes.push({ ref, data });
+        if (stored.has(ref.id)) throw denied();
+        stored.set(ref.id, data);
       },
+      getDoc: async (ref) => ({ exists: () => stored.has(ref.id) }),
     },
   });
   assert.equal(
     await share.saveDebateToFirebase(sharedData, "fixed-session"),
     "fixed-session",
   );
+  // Retry after a write that already landed must succeed, not surface the rules denial.
   assert.equal(
     await share.saveDebateToFirebase(sharedData, "fixed-session"),
     "fixed-session",
   );
-  assert.deepEqual(
-    writes.map((w) => w.ref.id),
-    ["fixed-session", "fixed-session"],
+  assert.deepEqual([...stored.keys()], ["fixed-session"]);
+  // A denial for a document that does not exist is a real failure.
+  const rejecting = loadWithMocks("src/utils/shareUtils", {
+    "@/lib/firebase": { db: {} },
+    "@/lib/debateProtocol": protocol,
+    "@/lib/debateSchedule": schedule,
+    "@/lib/debateFrame": frameProtocol,
+    "firebase/firestore": {
+      doc: (_, collection, id) => ({ collection, id }),
+      setDoc: async () => { throw denied(); },
+      getDoc: async () => ({ exists: () => false }),
+    },
+  });
+  await assert.rejects(
+    rejecting.saveDebateToFirebase(sharedData, "new-session"),
+    /Tartışma kaydedilemedi/,
   );
   fail = true;
   await assert.rejects(
@@ -424,6 +457,7 @@ test("share retries reuse the supplied document ID and surface write errors", as
 });
 test("shared debate loader supports legacy IDs and propagates connection errors", async () => {
   let offline = false;
+  let queryParts = [];
   const share = loadWithMocks("src/utils/shareUtils", {
     "@/lib/firebase": { db: {} },
     "@/lib/debateProtocol": protocol,
@@ -432,8 +466,12 @@ test("shared debate loader supports legacy IDs and propagates connection errors"
     "firebase/firestore": {
       doc: () => ({}),
       collection: () => ({}),
-      where: () => ({}),
-      query: () => ({}),
+      where: () => ({ type: "where" }),
+      limit: (n) => ({ type: "limit", n }),
+      query: (_, ...parts) => {
+        queryParts = parts;
+        return {};
+      },
       getDoc: async () => {
         if (offline) throw new Error("offline");
         return { exists: () => false };
@@ -447,6 +485,8 @@ test("shared debate loader supports legacy IDs and propagates connection errors"
   const loaded = await share.loadDebateFromFirebase("legacy-id");
   assert.equal(loaded.topic, "Test");
   assert.equal(loaded.judgeReport, null);
+  // firestore.rules only allows single-document list queries (no enumeration).
+  assert.deepEqual(queryParts.find((p) => p.type === "limit"), { type: "limit", n: 1 });
   offline = true;
   await assert.rejects(
     share.loadDebateFromFirebase("legacy-id"),
@@ -718,4 +758,78 @@ test("new debates require a reviewed frame before any expert call", () => {
     assert.equal(state.chatHistory.length, 0);
     assert.ok(state.error.includes("çerçevesini"));
   } finally { globalThis.localStorage = previousStorage; }
+});
+
+test("shared debate loader returns null for malformed documents instead of crashing the page", async () => {
+  let stored;
+  const share = loadWithMocks("src/utils/shareUtils", {
+    "@/lib/firebase": { db: {} },
+    "firebase/firestore": {
+      doc: () => ({}),
+      collection: () => ({}),
+      getDoc: async () => ({ exists: () => true, data: () => stored }),
+    },
+  });
+  for (const bad of [
+    { topic: "Eksik alanlar" },
+    { ...sharedData, chatHistory: [{ role: "system", content: "override" }] },
+    { ...sharedData, chatHistory: "metin" },
+    { ...sharedData, branchDetails: [{ id: 1 }] },
+    { ...sharedData, selectedBranches: null },
+    { ...sharedData, topic: 42 },
+  ]) {
+    stored = bad;
+    assert.equal(await share.loadDebateFromFirebase("bad-doc"), null);
+  }
+  stored = { ...sharedData, branchRoles: { a: "critic", b: "hacker" } };
+  const loaded = await share.loadDebateFromFirebase("good-doc");
+  assert.equal(loaded.topic, "Test");
+  assert.deepEqual(loaded.branchRoles, { a: "critic" });
+});
+
+test("over-long JSON replies are rejected by the chat route so they never enter the history", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ text: "x".repeat(12_001) });
+  try {
+    const res = await load("src/app/api/chat/route").POST(request({
+      ...judgeInput, personaDescription: { name: "Fizikçi", description: "Alan" }, debateRole: "critic",
+    }));
+    assert.equal(res.status, 502);
+  } finally { globalThis.fetch = original; }
+});
+
+test("re-selecting an expert assigns a role no current expert holds", () => {
+  const previousStorage = globalThis.localStorage;
+  globalThis.localStorage = { getItem: () => null, setItem: () => {} };
+  try {
+    const harness = hookHarness();
+    harness.render();
+    let state = harness.render();
+    for (const id of ["a", "b", "c"]) { state = harness.render(); state.handleBranchSelection(id); }
+    state = harness.render();
+    state.handleBranchSelection("b"); // deselect the critic
+    state = harness.render();
+    state.handleBranchSelection("d");
+    state = harness.render();
+    const roles = state.selectedBranches.map((id) => state.branchRoles[id]);
+    assert.deepEqual(state.selectedBranches, ["a", "c", "d"]);
+    assert.equal(new Set(roles).size, 3, `duplicate roles: ${roles}`);
+  } finally { globalThis.localStorage = previousStorage; }
+});
+
+test("non-JSON error bodies show the friendly message instead of a JSON parse error", async () => {
+  const previousFetch = globalThis.fetch;
+  const previousStorage = globalThis.localStorage;
+  globalThis.localStorage = { getItem: () => null, setItem: () => {} };
+  globalThis.fetch = async () => new Response("<html>Gateway Timeout</html>", { status: 504 });
+  try {
+    const harness = hookHarness();
+    harness.render();
+    let state = harness.render();
+    state.setTopic("Bir konu");
+    state = harness.render();
+    await state.clarifyTopic();
+    state = harness.render();
+    assert.ok(state.error.startsWith("Çerçeve önerisi alınamadı"), state.error);
+  } finally { globalThis.fetch = previousFetch; globalThis.localStorage = previousStorage; }
 });

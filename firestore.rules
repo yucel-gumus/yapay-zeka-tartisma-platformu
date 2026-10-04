@@ -1,0 +1,51 @@
+rules_version = '2';
+
+// Shared debates are public, anonymous and immutable.
+// Deploy: npx firebase-tools deploy --only firestore:rules --project <project-id>
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /debates/{debateId} {
+      // Readable by anyone holding the link.
+      allow get: if true;
+
+      // Legacy short links are resolved with where("id","==",x).limit(1).
+      // NOTE: limit(1) + pagination still allows slow enumeration. Switch to
+      // `if false` once legacy short links no longer need to resolve.
+      allow list: if request.query.limit <= 1;
+
+      // Create-only: nobody can overwrite or delete a shared debate.
+      allow create: if isValidDebate(debateId, request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+
+  function isValidDebate(debateId, d) {
+    return d.keys().hasOnly([
+        'id', 'topic', 'debateFrame', 'sources', 'roundsPerExpert',
+        'chatHistory', 'selectedBranches', 'branchRoles', 'judgeReport',
+        'branchDetails', 'finalVerdict', 'timestamp', 'createdAt'
+      ])
+      && d.keys().hasAll([
+        'id', 'topic', 'chatHistory', 'selectedBranches', 'branchDetails',
+        'finalVerdict', 'timestamp', 'createdAt'
+      ])
+      && d.id == debateId
+      && d.topic is string && d.topic.size() > 0 && d.topic.size() <= 2000
+      && d.chatHistory is list && d.chatHistory.size() > 0 && d.chatHistory.size() <= 30
+      && d.selectedBranches is list && d.selectedBranches.size() >= 2 && d.selectedBranches.size() <= 4
+      && d.branchDetails is list && d.branchDetails.size() <= 4
+      && d.finalVerdict is string && d.finalVerdict.size() <= 60000
+      && d.timestamp is number
+      && d.createdAt is string && d.createdAt.size() <= 40
+      && (!('sources' in d) || (d.sources is string && d.sources.size() <= 4000))
+      && (!('roundsPerExpert' in d) || d.roundsPerExpert in [3, 4, 6])
+      && (!('debateFrame' in d) || d.debateFrame == null || d.debateFrame is map)
+      && (!('judgeReport' in d) || d.judgeReport == null || d.judgeReport is map)
+      && (!('branchRoles' in d) || d.branchRoles is map);
+  }
+}
