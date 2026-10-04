@@ -6,8 +6,6 @@ interface Props {
   disabled: boolean;
 }
 
-const inputClass = "field";
-
 export default function DebateFrameEditor({
   frame,
   onChange,
@@ -28,7 +26,7 @@ export default function DebateFrameEditor({
           maxLength={2000}
           value={frame.thesis}
           onChange={(e) => onChange({ ...frame, thesis: e.target.value })}
-          className={inputClass}
+          className="field"
         />
       </div>
       <div className="space-y-3">
@@ -47,7 +45,7 @@ export default function DebateFrameEditor({
               id={`frame-term-${index}`}
               maxLength={150}
               value={definition.term}
-              className={inputClass}
+              className="field"
               onChange={(e) =>
                 onChange({
                   ...frame,
@@ -68,7 +66,7 @@ export default function DebateFrameEditor({
               rows={2}
               maxLength={1000}
               value={definition.meaning}
-              className={inputClass}
+              className="field"
               onChange={(e) =>
                 onChange({
                   ...frame,
@@ -124,7 +122,7 @@ export default function DebateFrameEditor({
               rows={2}
               maxLength={1000}
               value={claim}
-              className={inputClass}
+              className="field"
               onChange={(e) =>
                 onChange({
                   ...frame,
@@ -172,7 +170,7 @@ export default function DebateFrameEditor({
           maxLength={2000}
           value={frame.scope}
           onChange={(e) => onChange({ ...frame, scope: e.target.value })}
-          className={inputClass}
+          className="field"
         />
       </div>
       <p className="text-xs text-[#5E3D38]">

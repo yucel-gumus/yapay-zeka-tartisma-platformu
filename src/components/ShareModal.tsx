@@ -24,6 +24,33 @@ interface ShareModalProps {
   debateData: SharedDebateData;
 }
 
+const SOCIAL_TARGETS = [
+  {
+    label: "X / Twitter",
+    Icon: TwitterIcon,
+    href: (url: string, text: string) =>
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+  },
+  {
+    label: "LinkedIn",
+    Icon: LinkedInIcon,
+    href: (url: string) =>
+      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+  },
+  {
+    label: "WhatsApp",
+    Icon: WhatsAppIcon,
+    href: (url: string, text: string) =>
+      `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
+  },
+  {
+    label: "Telegram",
+    Icon: TelegramIcon,
+    href: (url: string, text: string) =>
+      `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+  },
+];
+
 const ShareModal: React.FC<ShareModalProps> = ({
   isOpen,
   onClose,
@@ -31,6 +58,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
 }) => {
   const [shareLink, setShareLink] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
@@ -73,37 +101,14 @@ const ShareModal: React.FC<ShareModalProps> = ({
 
   const handleCopyLink = async () => {
     const success = await copyToClipboard(shareLink);
+    setCopyFailed(!success);
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const handleSocialShare = (platform: string) => {
-    if (!shareLink || loading) return;
-    const text = `"${debateData.topic}" konusunda yapılan AI tartışmasını inceleyin!`;
-    const url = shareLink;
-
-    let shareUrl = "";
-    switch (platform) {
-      case "twitter":
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-        break;
-      case "linkedin":
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-        break;
-      case "whatsapp":
-        shareUrl = `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`;
-        break;
-      case "telegram":
-        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-        break;
-    }
-
-    if (shareUrl) {
-      window.open(shareUrl, "_blank", "width=600,height=400");
-    }
-  };
+  const shareText = `"${debateData.topic}" konusunda yapılan AI tartışmasını inceleyin!`;
 
   return (
     <Modal
@@ -149,12 +154,17 @@ const ShareModal: React.FC<ShareModalProps> = ({
               />
               <button
                 onClick={handleCopyLink}
-                className="px-5 py-3 rounded-xl font-semibold transition-all  cursor-pointer bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] flex items-center gap-1.5"
+                className="btn btn-mint"
               >
                 {copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}
                 <span>{copied ? "Kopyalandı" : "Kopyala"}</span>
               </button>
             </div>
+            {copyFailed && (
+              <p role="alert" className="helper mt-2">
+                Otomatik kopyalanamadı. Bağlantıyı seçip elle kopyalayın.
+              </p>
+            )}
           </div>
         ) : (
           <div className="bg-[#FFB6A6]/40 border border-[#FFB6A6] rounded-xl p-4">
@@ -176,38 +186,23 @@ const ShareModal: React.FC<ShareModalProps> = ({
           Sosyal Medyada Paylaş:
         </h4>
         <div className="grid grid-cols-2 gap-3">
-          <button
-            disabled={!shareLink || loading}
-            onClick={() => handleSocialShare("twitter")}
-            className="flex items-center justify-center gap-2 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold py-3 px-4 rounded-xl transition-all  cursor-pointer"
-          >
-            <TwitterIcon size={18} />
-            <span>X / Twitter</span>
-          </button>
-          <button
-            disabled={!shareLink || loading}
-            onClick={() => handleSocialShare("linkedin")}
-            className="flex items-center justify-center gap-2 bg-[#FFB6A6] hover:bg-[#f0a595] text-[#2C1A18] font-semibold py-3 px-4 rounded-xl transition-all  cursor-pointer"
-          >
-            <LinkedInIcon size={18} />
-            <span>LinkedIn</span>
-          </button>
-          <button
-            disabled={!shareLink || loading}
-            onClick={() => handleSocialShare("whatsapp")}
-            className="flex items-center justify-center gap-2 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold py-3 px-4 rounded-xl transition-all  cursor-pointer"
-          >
-            <WhatsAppIcon size={18} />
-            <span>WhatsApp</span>
-          </button>
-          <button
-            disabled={!shareLink || loading}
-            onClick={() => handleSocialShare("telegram")}
-            className="flex items-center justify-center gap-2 bg-[#FFB6A6] hover:bg-[#f0a595] text-[#2C1A18] font-semibold py-3 px-4 rounded-xl transition-all  cursor-pointer"
-          >
-            <TelegramIcon size={18} />
-            <span>Telegram</span>
-          </button>
+          {SOCIAL_TARGETS.map(({ label, Icon, href }) => (
+            <button
+              key={label}
+              disabled={!shareLink || loading}
+              onClick={() =>
+                window.open(
+                  href(shareLink, shareText),
+                  "_blank",
+                  "noopener,noreferrer,width=600,height=400",
+                )
+              }
+              className="btn btn-outline"
+            >
+              <Icon size={18} />
+              <span>{label}</span>
+            </button>
+          ))}
         </div>
       </div>
 

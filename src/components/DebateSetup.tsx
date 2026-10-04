@@ -3,6 +3,7 @@ import { DEBATE_ROLES } from "@/lib/debateProtocol";
 import { DEBATE_LENGTHS, type DebateRounds } from "@/lib/debateSchedule";
 import { Branch, DebateRole, DebateFrame } from "@/types/debate";
 import { parseDebateFrame } from "@/lib/debateFrame";
+import { DEBATE_CONFIG } from "@/config/constants";
 import DebateFrameEditor from "./DebateFrameEditor";
 import { PlusIcon, EditIcon, TrashIcon, RocketIcon } from "./ui/Icons";
 
@@ -62,7 +63,8 @@ const DebateSetup: React.FC<DebateSetupProps> = (props) => {
     onDeleteBranch,
   } = props;
   const validExperts =
-    selectedBranches.length >= 2 && selectedBranches.length <= 4;
+    selectedBranches.length >= DEBATE_CONFIG.MIN_EXPERTS &&
+    selectedBranches.length <= DEBATE_CONFIG.MAX_EXPERTS;
   const validFrame = !!parseDebateFrame(debateFrame);
   const ready = validExperts && !!topic.trim() && validFrame && !isClarifying;
   return (
@@ -105,7 +107,6 @@ const DebateSetup: React.FC<DebateSetupProps> = (props) => {
           </label>
           <textarea
             id="debate-topic"
-            aria-label="Tartışma konusu"
             maxLength={2000}
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
@@ -245,9 +246,14 @@ const DebateSetup: React.FC<DebateSetupProps> = (props) => {
           <span className="step-number">03</span>
           <div>
             <h3>Uzman kadrosu</h3>
-            <p>Farklı bakış açıları için 2–4 uzman seç.</p>
+            <p>
+              Farklı bakış açıları için {DEBATE_CONFIG.MIN_EXPERTS}–
+              {DEBATE_CONFIG.MAX_EXPERTS} uzman seç.
+            </p>
           </div>
-          <span className="pill ml-auto">{selectedBranches.length}/4</span>
+          <span className="pill ml-auto">
+            {selectedBranches.length}/{DEBATE_CONFIG.MAX_EXPERTS}
+          </span>
         </div>
         <div className="expert-grid">
           {allBranches.map((branch) => {
@@ -356,7 +362,7 @@ const DebateSetup: React.FC<DebateSetupProps> = (props) => {
               : !validFrame
                 ? "Tez çerçevesini oluştur ve gözden geçir."
                 : !validExperts
-                  ? "Kadroya en az 2 uzman ekle."
+                  ? `Kadroya en az ${DEBATE_CONFIG.MIN_EXPERTS} uzman ekle.`
                   : `${selectedBranches.length} uzman · ${roundsPerExpert} tam tur · ${selectedBranches.length * roundsPerExpert} konuşma`}
           </p>
         </div>

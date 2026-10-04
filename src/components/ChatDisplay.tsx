@@ -39,7 +39,6 @@ interface ChatDisplayProps {
   onShowJudgeReport: () => void;
   onResetDebate: () => void;
   onShareDebate: () => void;
-  chatEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const ChatDisplay: React.FC<ChatDisplayProps> = ({
@@ -65,7 +64,6 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
   onShowJudgeReport,
   onResetDebate,
   onShareDebate,
-  chatEndRef,
 }) => {
   const order = activeBranchOrder.length ? activeBranchOrder : selectedBranches;
   const currentBranchId = order[currentTurn % (order.length || 1)];
@@ -272,7 +270,6 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
               isStreaming
             />
           )}
-          <div ref={chatEndRef} />
         </div>
         <p className="helper mt-5 pt-4 border-t border-[#5E3D38]/10">
           {isDebating

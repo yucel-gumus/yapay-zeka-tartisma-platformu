@@ -12,94 +12,6 @@ interface JudgePopupProps {
   onClose: () => void;
 }
 
-// Clean raw markdown symbols (###, **, *, etc)
-function cleanText(text: string): string {
-  return text
-    .replace(/^#+\s*/gm, "") // Remove heading hashes
-    .replace(/\*+/g, "") // Remove markdown asterisks
-    .replace(/^[-•]\s+/gm, "• ") // Clean bullet points
-    .replace(/NİHAİ HÜKÜM:\s*/gi, "") // Remove inline prefix
-    .trim();
-}
-
-interface ParsedSection {
-  title: string;
-  type: "evaluation" | "winner" | "conditions" | "ruling" | "generic";
-  icon: string;
-  content: string;
-}
-
-function parseVerdict(rawVerdict: string): ParsedSection[] {
-  if (!rawVerdict) return [];
-
-  // Remove preamble text if present
-  const text = rawVerdict.replace(/Mahkeme salonu[\s\S]*?\*\*\*/, "").trim();
-
-  const sections: ParsedSection[] = [];
-
-  // Regex matches for the 4 structured sections
-  const evaluationMatch = text.match(
-    /(?:###|\*\*|)?\s*(?:📌|1\.)?\s*TARTIŞMA VE KRİTER DEĞERLENDİRMESİ:?\s*([\s\S]*?)(?=(?:###|\*\*|)?\s*(?:🏆|2\.|ÖNE ÇIKAN)|$)/i,
-  );
-  const winnerMatch = text.match(
-    /(?:###|\*\*|)?\s*(?:🏆|2\.)?\s*ÖNE ÇIKAN \/ KAZANAN TARAF:?\s*([\s\S]*?)(?=(?:###|\*\*|)?\s*(?:⚖️|3\.|KRİTİK KOŞULLAR)|$)/i,
-  );
-  const conditionsMatch = text.match(
-    /(?:###|\*\*|)?\s*(?:⚖️|3\.)?\s*KRİTİK KOŞULLAR VE NÜANSLAR:?\s*([\s\S]*?)(?=(?:###|\*\*|)?\s*(?:🏛️|4\.|NİHAİ HAKEM HÜKMÜ)|$)/i,
-  );
-  const rulingMatch = text.match(
-    /(?:###|\*\*|)?\s*(?:🏛️|4\.)?\s*NİHAİ HAKEM HÜKMÜ:?\s*([\s\S]*?)$/i,
-  );
-
-  if (evaluationMatch && evaluationMatch[1].trim()) {
-    sections.push({
-      title: "Tartışma ve Kriter Değerlendirmesi",
-      type: "evaluation",
-      icon: "📊",
-      content: cleanText(evaluationMatch[1]),
-    });
-  }
-
-  if (winnerMatch && winnerMatch[1].trim()) {
-    sections.push({
-      title: "Öne Çıkan / Kazanan Taraf",
-      type: "winner",
-      icon: "🏆",
-      content: cleanText(winnerMatch[1]),
-    });
-  }
-
-  if (conditionsMatch && conditionsMatch[1].trim()) {
-    sections.push({
-      title: "Kritik Koşullar ve Nüanslar",
-      type: "conditions",
-      icon: "⚖️",
-      content: cleanText(conditionsMatch[1]),
-    });
-  }
-
-  if (rulingMatch && rulingMatch[1].trim()) {
-    sections.push({
-      title: "Nihai Hakem Hükmü",
-      type: "ruling",
-      icon: "🏛️",
-      content: cleanText(rulingMatch[1]),
-    });
-  }
-
-  // Fallback if standard headers weren't found
-  if (sections.length === 0) {
-    sections.push({
-      title: "Hakem Değerlendirmesi",
-      type: "generic",
-      icon: "🏛️",
-      content: cleanText(text),
-    });
-  }
-
-  return sections;
-}
-
 const JudgePopup: React.FC<JudgePopupProps> = ({
   showPopup,
   isLoading,
@@ -107,7 +19,6 @@ const JudgePopup: React.FC<JudgePopupProps> = ({
   report,
   onClose,
 }) => {
-  const sections = parseVerdict(verdict);
   return (
     <Modal
       isOpen={showPopup}
@@ -130,21 +41,9 @@ const JudgePopup: React.FC<JudgePopupProps> = ({
           {report ? (
             <JudgeReportView report={report} />
           ) : (
-            sections.map((section, index) => (
-              <section
-                key={index}
-                className={
-                  section.type === "ruling"
-                    ? "report-decision"
-                    : "border-b border-[#5E3D38]/15 pb-5"
-                }
-              >
-                <h4 className="text-sm font-semibold mb-3">{section.title}</h4>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                  {section.content}
-                </p>
-              </section>
-            ))
+            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+              {verdict}
+            </p>
           )}
           <button onClick={onClose} className="btn btn-dark w-full">
             Kararı anladım ve kapat

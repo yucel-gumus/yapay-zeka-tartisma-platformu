@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import React, { useMemo } from "react";
 import branchesData from "@/data/branches.json";
 import { useDebateLogic } from "@/hooks/useDebateLogic";
@@ -9,7 +10,10 @@ import DebateSetup from "@/components/DebateSetup";
 import ChatDisplay from "@/components/ChatDisplay";
 import AddBranchModal from "@/components/AddBranchModal";
 import JudgePopup from "@/components/JudgePopup";
-import ShareModal from "@/components/ShareModal";
+// Firestore is only needed after a verdict, when the user shares; keep it out of the initial bundle.
+const ShareModal = dynamic(() => import("@/components/ShareModal"), {
+  ssr: false,
+});
 import { Branch } from "@/types/debate";
 import { RobotIcon } from "@/components/ui/Icons";
 
@@ -118,7 +122,6 @@ export default function Home() {
             branchRoles={debateLogic.branchRoles}
             onResetDebate={debateLogic.resetDebate}
             onShareDebate={debateLogic.openShareModal}
-            chatEndRef={debateLogic.chatEndRef}
           />
         )}
 
@@ -145,11 +148,14 @@ export default function Home() {
           onClose={branchManagement.closeAddBranchModal}
         />
 
-        <ShareModal
-          isOpen={debateLogic.showShareModal}
-          onClose={debateLogic.closeShareModal}
-          debateData={shareData}
-        />
+        {/* Sharing is only offered after a verdict; staying mounted keeps the share ID stable across reopenings. */}
+        {debateLogic.finalVerdict && (
+          <ShareModal
+            isOpen={debateLogic.showShareModal}
+            onClose={debateLogic.closeShareModal}
+            debateData={shareData}
+          />
+        )}
       </div>
     </div>
   );

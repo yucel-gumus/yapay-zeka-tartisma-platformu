@@ -86,7 +86,7 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
             <button
               onClick={onGenerateDescription}
               disabled={!newBranchName.trim() || isGeneratingDescription}
-              className="px-4 py-2 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2  cursor-pointer"
+              className="btn btn-mint"
             >
               {isGeneratingDescription ? (
                 <>
@@ -128,17 +128,14 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
         </div>
       </div>
 
-      <div className="flex space-x-3 mt-6">
-        <button
-          onClick={onClose}
-          className="flex-1 py-3.5 px-4 border border-[#FFB6A6] bg-[#FFB6A6]/30 text-[#2C1A18] font-semibold rounded-xl hover:bg-[#FFB6A6]/50 transition-colors cursor-pointer"
-        >
+      <div className="flex gap-3 mt-6">
+        <button onClick={onClose} className="btn btn-outline flex-1">
           İptal
         </button>
         <button
           onClick={onAddBranch}
           disabled={!newBranchName.trim() || !newBranchDescription.trim()}
-          className="flex-1 py-3.5 px-4 bg-[#9BCEC1] hover:bg-[#85b9ac] text-[#2C1A18] font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed  cursor-pointer"
+          className="btn btn-mint flex-1"
         >
           {editingBranch ? "Güncelle" : "Ekle"}
         </button>
