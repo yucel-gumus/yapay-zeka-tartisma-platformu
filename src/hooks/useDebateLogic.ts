@@ -8,9 +8,14 @@ import {
   DebateFrame,
 } from "@/types/debate";
 import { DEBATE_CONFIG } from "@/config/constants";
-import { ROLE_ORDER, parseJudgeReport } from "@/lib/debateProtocol";
+import { ROLE_ORDER, parseJudgeReport, formatJudgeReport } from "@/lib/debateProtocol";
 import { getTurnContext, restoreDebateRounds, type DebateRounds } from "@/lib/debateSchedule";
 import { createManualFrame, parseDebateFrame } from "@/lib/debateFrame";
+import {
+  resolveDirectBackendBase,
+  extractApiError,
+  toBackendChatHistory,
+} from "@/lib/debateClient";
 import {
   parseBranches,
   parseChatHistory,
@@ -180,12 +185,21 @@ export const useDebateLogic = () => {
     setIsClarifying(true);
     setError("");
     try {
-      const response = await fetch("/api/clarify-topic", {
+      const directBase = resolveDirectBackendBase();
+      const endpoint = directBase ? `${directBase}/api/debate/clarify` : "/api/clarify-topic";
+      const response = await fetch(endpoint, {
         method: "POST", headers: { "Content-Type": "application/json" },
         signal: controller.signal, body: JSON.stringify({ topic }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Çerçeve önerisi alınamadı. Yeniden deneyin veya kendiniz düzenleyin.");
+      if (!response.ok) {
+        throw new Error(
+          extractApiError(
+            data,
+            "Çerçeve önerisi alınamadı. Yeniden deneyin veya kendiniz düzenleyin.",
+          ),
+        );
+      }
       const frame = parseDebateFrame(data.frame);
       if (!frame) throw new Error("Çerçeve önerisi eksik. Yeniden deneyin veya kendiniz düzenleyin.");
       if (clarifyRunRef.current === run && !controller.signal.aborted) setDebateFrame(frame);
@@ -240,25 +254,58 @@ export const useDebateLogic = () => {
         setIsStreamingMessage(true);
         setCurrentStreamingContent("");
         const turnContext = getTurnContext(turn, order.length, roundsPerExpert);
+        const directBase = resolveDirectBackendBase();
+        const role = branchRoles[expert.id] || "assumptions";
+        const participatingExperts = order
+          .map(
+            (id) =>
+              (
+                allBranches.find((b) => b.id === id) ||
+                draftBranchesRef.current.find((b) => b.id === id)
+              )?.name,
+          )
+          .filter((name): name is string => Boolean(name));
         let content = "";
         for (let attempt = 0; attempt <= DEBATE_CONFIG.MAX_RETRIES; attempt++) {
-          const response = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            signal: controller.signal,
-            body: JSON.stringify({
-              chatHistory: history,
-              personaDescription: expert,
-              topic,
-              debateFrame,
-              sources,
-              debateRole: branchRoles[expert.id] || "assumptions",
-              ...turnContext,
-              participatingExperts: order.map((id) =>
-                (allBranches.find((b) => b.id === id) || draftBranchesRef.current.find((b) => b.id === id))?.name,
-              ).filter(Boolean),
-            }),
-          });
+          const response = await fetch(
+            directBase ? `${directBase}/api/debate/turn` : "/api/chat",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              signal: controller.signal,
+              body: JSON.stringify(
+                directBase
+                  ? {
+                      topic,
+                      debate_frame: debateFrame,
+                      sources,
+                      debate_role: role,
+                      ...(turnContext.roundNumber !== undefined
+                        ? {
+                            round_number: turnContext.roundNumber,
+                            total_rounds: roundsPerExpert,
+                          }
+                        : {}),
+                      participating_experts: participatingExperts,
+                      persona: {
+                        name: expert.name,
+                        description: expert.description,
+                      },
+                      chat_history: toBackendChatHistory(history),
+                    }
+                  : {
+                      chatHistory: history,
+                      personaDescription: expert,
+                      topic,
+                      debateFrame,
+                      sources,
+                      debateRole: role,
+                      ...turnContext,
+                      participatingExperts,
+                    },
+              ),
+            },
+          );
           if (!response.ok) {
             const body = await response.json().catch(() => null);
             if (
@@ -289,20 +336,31 @@ export const useDebateLogic = () => {
               continue;
             }
             throw new Error(
-              body?.error ||
+              extractApiError(
+                body,
                 "Yanıt alınamadı. Tartışmayı kaldığı yerden sürdürebilirsiniz.",
+              ),
             );
           }
-          const reader = response.body?.getReader();
-          if (!reader) throw new Error("Yanıt okunamadı.");
-          const decoder = new TextDecoder();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            content += decoder.decode(value, { stream: true });
+          if (response.headers.get("content-type")?.includes("application/json")) {
+            const payload = await response.json().catch(() => null);
+            content = typeof payload?.text === "string" ? payload.text : "";
+            if (content.length > 12_000) {
+              throw new Error("AI hizmeti boş veya çok uzun yanıt verdi.");
+            }
             if (runRef.current === run) setCurrentStreamingContent(content);
+          } else {
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error("Yanıt okunamadı.");
+            const decoder = new TextDecoder();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              content += decoder.decode(value, { stream: true });
+              if (runRef.current === run) setCurrentStreamingContent(content);
+            }
+            content += decoder.decode();
           }
-          content += decoder.decode();
           break;
         }
         if (runRef.current !== run) return;
@@ -387,29 +445,70 @@ export const useDebateLogic = () => {
     setIsJudgeLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/judge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          topic,
-          debateFrame,
-          sources,
-          chatHistory: historyRef.current.filter((m) => m.role !== "judge"),
-        }),
-      });
+      const directBase = resolveDirectBackendBase();
+      const cleanHistory = historyRef.current.filter((m) => m.role !== "judge");
+      const response = await fetch(
+        directBase ? `${directBase}/api/debate/judge` : "/api/judge",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify(
+            directBase
+              ? {
+                  topic,
+                  debate_frame: debateFrame,
+                  sources,
+                  chat_history: toBackendChatHistory(cleanHistory),
+                }
+              : {
+                  topic,
+                  debateFrame,
+                  sources,
+                  chatHistory: cleanHistory,
+                },
+          ),
+        },
+      );
       const data = await response.json().catch(() => ({}));
       if (!response.ok)
         throw new Error(
-          data.error ||
+          extractApiError(
+            data,
             "Hakem değerlendirmesi alınamadı. Yeniden deneyebilirsiniz.",
+          ),
         );
       if (runRef.current !== run) return;
-      setFinalVerdict(data.verdict);
-      setJudgeReport(data.report || null);
+      let verdictText = data.verdict;
+      let resolvedReport: JudgeReport | null = data.report || null;
+      if (directBase) {
+        const speakers = [
+          ...new Set(
+            cleanHistory
+              .filter((m) => !m.failed && m.role === "assistant")
+              .map((m) => m.branchName || "Uzman"),
+          ),
+        ];
+        const validated = parseJudgeReport(data.report);
+        if (
+          !validated ||
+          !validated.decision ||
+          validated.scores.length !== speakers.length ||
+          new Set(validated.scores.map((s) => s.name)).size !== speakers.length ||
+          !validated.scores.every((s) => speakers.includes(s.name))
+        ) {
+          throw new Error(
+            "Backend geçerli hakem raporu döndürmedi. Tartışmanız korundu, yeniden deneyebilirsiniz.",
+          );
+        }
+        resolvedReport = validated;
+        verdictText = formatJudgeReport(validated);
+      }
+      setFinalVerdict(verdictText);
+      setJudgeReport(resolvedReport);
       commitHistory([
         ...historyRef.current.filter((m) => m.role !== "judge"),
-        { role: "judge", content: data.verdict },
+        { role: "judge", content: verdictText },
       ]);
     } catch (e) {
       if (runRef.current === run && !controller.signal.aborted) {

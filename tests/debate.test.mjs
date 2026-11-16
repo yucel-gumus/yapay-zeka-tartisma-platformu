@@ -833,3 +833,68 @@ test("non-JSON error bodies show the friendly message instead of a JSON parse er
     assert.ok(state.error.startsWith("Çerçeve önerisi alınamadı"), state.error);
   } finally { globalThis.fetch = previousFetch; globalThis.localStorage = previousStorage; }
 });
+
+test("production browser host routes clarify, turn and judge directly to Cloud Run", async () => {
+  const previousFetch = globalThis.fetch;
+  const previousStorage = globalThis.localStorage;
+  const hadWindow = Object.prototype.hasOwnProperty.call(globalThis, "window");
+  const previousWindow = globalThis.window;
+  const saved = new Map();
+  globalThis.localStorage = { getItem: (key) => saved.get(key) || null, setItem: (key, value) => saved.set(key, value) };
+  globalThis.window = { location: { hostname: "yapay-zeka-tartisma-platformu.vercel.app" } };
+  const calls = [];
+  const experts = [
+    { id: "a", name: "Fizikçi", description: "Fizik uzmanı" },
+    { id: "b", name: "Felsefeci", description: "Etik uzmanı" },
+  ];
+  const twoSpeakerReport = {
+    ...report,
+    decision: { ...report.decision, winner: "Fizikçi" },
+    scores: [
+      { ...report.scores[0], name: "Fizikçi" },
+      { ...report.scores[0], name: "Felsefeci" },
+    ],
+  };
+  globalThis.fetch = async (url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push({ url, body });
+    if (url.endsWith("/api/debate/clarify")) return Response.json({ frame });
+    if (url.endsWith("/api/debate/turn")) return Response.json({ text: "Doğrudan Cloud Run uzman görüşü." });
+    if (url.endsWith("/api/debate/judge")) return Response.json({ verdict: "Raw verdict", report: twoSpeakerReport });
+    throw new Error(`Unexpected URL: ${url}`);
+  };
+  try {
+    const harness = hookHarness();
+    harness.render();
+    let state = harness.render();
+    state.setTopic("Test konusu");
+    state = harness.render();
+    await state.clarifyTopic();
+    state = harness.render();
+    for (const exp of experts) { state = harness.render(); state.handleBranchSelection(exp.id); }
+    state = harness.render();
+    state.setRoundsPerExpert(3);
+    state = harness.render();
+    state.startDebate(experts);
+    await until(() => harness.render().currentTurn === 6);
+    state = harness.render();
+    await state.stopDebate();
+    state = harness.render();
+    assert.equal(calls[0].url, "https://python-backend-270384591051.europe-west3.run.app/api/debate/clarify");
+    assert.equal(calls[1].url, "https://python-backend-270384591051.europe-west3.run.app/api/debate/turn");
+    assert.deepEqual(calls[1].body.debate_frame, frame);
+    assert.equal(calls[1].body.round_number, 1);
+    assert.equal(calls[1].body.total_rounds, 3);
+    assert.deepEqual(calls[1].body.participating_experts, ["Fizikçi", "Felsefeci"]);
+    assert.equal(calls.at(-1).url, "https://python-backend-270384591051.europe-west3.run.app/api/debate/judge");
+    assert.equal(calls.at(-1).body.chat_history.length, 7);
+    assert.deepEqual(state.judgeReport, twoSpeakerReport);
+    assert.ok(state.finalVerdict.includes("Argüman üstünlüğü: Fizikçi"));
+  } finally {
+    globalThis.fetch = previousFetch;
+    globalThis.localStorage = previousStorage;
+    if (hadWindow) globalThis.window = previousWindow;
+    else delete globalThis.window;
+  }
+});
+
