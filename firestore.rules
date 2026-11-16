@@ -4,6 +4,10 @@ rules_version = '2';
 // Deploy: npx firebase-tools deploy --only firestore:rules --project <project-id>
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /system_config/{doc=**} {
+      allow read, write: if false;
+    }
+
     match /debates/{debateId} {
       // Readable by anyone holding the link.
       allow get: if true;
