@@ -119,11 +119,11 @@ const ShareModal: React.FC<ShareModalProps> = ({
       maxWidthClass="max-w-md"
     >
       <div className="mb-6 space-y-4">
-        <div className="bg-[#FFB6A6]/30 rounded-xl p-4 border border-[#FFB6A6]">
-          <h3 className="font-semibold text-[#2C1A18] text-base mb-1">
+        <div className="bg-[#DBE6DD] rounded-xl p-4 border border-[#BCC7D2]">
+          <h3 className="font-semibold text-[#253341] text-base mb-1">
             {debateData.topic}
           </h3>
-          <p className="text-sm font-semibold text-[#5E3D38]">
+          <p className="text-sm font-semibold text-[#3E5164]">
             {debateData.selectedBranches.length} uzman •{" "}
             {debateData.chatHistory.length} mesaj
           </p>
@@ -131,8 +131,8 @@ const ShareModal: React.FC<ShareModalProps> = ({
 
         {loading ? (
           <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#9BCEC1]"></div>
-            <span className="ml-3 font-semibold text-[#2C1A18]">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#EC7D55]"></div>
+            <span className="ml-3 font-semibold text-[#253341]">
               Paylaşım bağlantısı hazırlanıyor…
             </span>
           </div>
@@ -140,7 +140,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
           <div>
             <label
               htmlFor="share-link"
-              className="block text-sm font-semibold text-[#2C1A18] mb-2"
+              className="block text-sm font-semibold text-[#253341] mb-2"
             >
               Paylaşım Linki:
             </label>
@@ -167,13 +167,13 @@ const ShareModal: React.FC<ShareModalProps> = ({
             )}
           </div>
         ) : (
-          <div className="bg-[#FFB6A6]/40 border border-[#FFB6A6] rounded-xl p-4">
-            <p className="text-[#2C1A18] text-sm font-semibold">
+          <div className="bg-[#F2A488]/30 border border-[#AB421C] rounded-xl p-4">
+            <p className="text-[#253341] text-sm font-semibold">
               {error || "Paylaşım bağlantısı oluşturulamadı."}
             </p>
             <button
               onClick={() => setRetry((value) => value + 1)}
-              className="mt-2 text-[#2C1A18] font-semibold text-sm underline cursor-pointer"
+              className="mt-2 text-[#AB421C] font-semibold text-sm underline cursor-pointer"
             >
               Tekrar dene
             </button>
@@ -182,7 +182,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
       </div>
 
       <div className="mb-6">
-        <h4 className="font-semibold text-[#2C1A18] mb-3">
+        <h4 className="font-semibold text-[#253341] mb-3">
           Sosyal Medyada Paylaş:
         </h4>
         <div className="grid grid-cols-2 gap-3">
@@ -206,9 +206,9 @@ const ShareModal: React.FC<ShareModalProps> = ({
         </div>
       </div>
 
-      <div className="bg-[#FFB6A6]/20 border border-[#FFB6A6] rounded-xl p-4">
-        <p className="text-xs text-[#5E3D38] font-semibold flex items-center gap-1.5">
-          <IdeaIcon size={16} className="shrink-0 text-[#2C1A18]" />
+      <div className="bg-[#DCE3EA] border border-[#BCC7D2] rounded-xl p-4">
+        <p className="text-xs text-[#3E5164] font-semibold flex items-center gap-1.5">
+          <IdeaIcon size={16} className="shrink-0 text-[#AB421C]" />
           <span>
             Not: Bu link tartışmanın tam kopyasını içerir ve herkes tarafından
             görüntülenebilir.

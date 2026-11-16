@@ -29,7 +29,7 @@ const JudgePopup: React.FC<JudgePopupProps> = ({
     >
       {isLoading ? (
         <div role="status" className="py-12 text-center">
-          <div className="animate-spin w-9 h-9 rounded-full border-2 border-[#9BCEC1] border-t-transparent mx-auto mb-5" />
+          <div className="animate-spin w-9 h-9 rounded-full border-2 border-[#EC7D55] border-t-transparent mx-auto mb-5" />
           <p className="text-lg font-semibold">Argümanlar değerlendiriliyor</p>
           <p className="helper mt-2">
             Tutarlılık, kanıtlar ve karşı argümanlara verilen yanıtlar

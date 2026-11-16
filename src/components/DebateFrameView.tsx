@@ -2,7 +2,7 @@ import type { DebateFrame } from "@/types/debate";
 
 export default function DebateFrameView({ frame }: { frame: DebateFrame }) {
   return (
-    <section className="space-y-4 rounded-xl bg-[#9BCEC1]/10 p-4 text-[#2C1A18] break-words">
+    <section className="space-y-4 rounded-xl bg-[#DBE6DD]/70 border border-[#BCC7D2] p-4 text-[#253341] break-words">
       <h3 className="eyebrow">ONAYLANAN TEZ</h3>
       <p className="whitespace-pre-wrap font-semibold leading-relaxed">
         {frame.thesis}

@@ -40,7 +40,10 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
       maxWidthClass="max-w-lg"
     >
       {error && (
-        <p role="alert" className="mb-4 text-sm text-[#5E3D38]">
+        <p
+          role="alert"
+          className="mb-4 rounded-xl border border-[#AB421C] bg-[#F2A488]/30 px-3 py-2 text-sm font-medium text-[#253341]"
+        >
           {error}
         </p>
       )}
@@ -48,12 +51,12 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
         {/* Expertise Name Section */}
         <div className="relative">
           <div className="flex items-center space-x-2 mb-3">
-            <div className="w-8 h-8 bg-[#9BCEC1] rounded-xl flex items-center justify-center text-[#2C1A18] font-semibold text-sm">
+            <div className="w-8 h-8 bg-[#EC7D55] rounded-xl flex items-center justify-center text-[#253341] font-semibold text-sm border border-[#AB421C]/40">
               1
             </div>
             <label
               htmlFor="custom-expert-name"
-              className="text-sm font-semibold text-[#2C1A18]"
+              className="text-sm font-semibold text-[#253341]"
             >
               Uzmanlık Alanı Adı
             </label>
@@ -73,12 +76,12 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
         <div className="relative">
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#FFB6A6] rounded-xl flex items-center justify-center text-[#2C1A18] font-semibold text-sm">
+              <div className="w-8 h-8 bg-[#F2A488] rounded-xl flex items-center justify-center text-[#253341] font-semibold text-sm border border-[#EC7D55]">
                 2
               </div>
               <label
                 htmlFor="custom-expert-description"
-                className="text-sm font-semibold text-[#2C1A18]"
+                className="text-sm font-semibold text-[#253341]"
               >
                 Uzmanlık Açıklaması
               </label>
@@ -90,7 +93,7 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
             >
               {isGeneratingDescription ? (
                 <>
-                  <div className="animate-spin w-4 h-4 border border-[#2C1A18] border-t-transparent rounded-full"></div>
+                  <div className="animate-spin w-4 h-4 border border-[#253341] border-t-transparent rounded-full"></div>
                   <span>Oluşturuluyor...</span>
                 </>
               ) : (
@@ -110,16 +113,16 @@ const AddBranchModal: React.FC<AddBranchModalProps> = ({
             rows={5}
             className="field"
           />
-          <div className="flex items-center justify-between mt-2 text-xs font-bold text-[#5E3D38]">
+          <div className="flex items-center justify-between mt-2 text-xs font-bold text-[#3E5164]">
             <span className="flex items-center space-x-1">
-              <IdeaIcon size={14} className="text-[#2C1A18]" />
+              <IdeaIcon size={14} className="text-[#AB421C]" />
               <span>Detaylı açıklama daha iyi tartışmalar sağlar</span>
             </span>
             <span
               className={
                 newBranchDescription.length > 100
-                  ? "text-[#2C1A18]"
-                  : "text-[#5E3D38]"
+                  ? "text-[#253341]"
+                  : "text-[#3E5164]"
               }
             >
               {newBranchDescription.length} karakter

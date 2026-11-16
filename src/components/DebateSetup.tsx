@@ -4,6 +4,7 @@ import { DEBATE_LENGTHS, type DebateRounds } from "@/lib/debateSchedule";
 import { Branch, DebateRole, DebateFrame } from "@/types/debate";
 import { parseDebateFrame } from "@/lib/debateFrame";
 import { DEBATE_CONFIG } from "@/config/constants";
+import { getPersonaTheme } from "@/lib/personaTheme";
 import DebateFrameEditor from "./DebateFrameEditor";
 import { PlusIcon, EditIcon, TrashIcon, RocketIcon } from "./ui/Icons";
 
@@ -260,10 +261,15 @@ const DebateSetup: React.FC<DebateSetupProps> = (props) => {
             const index = selectedBranches.indexOf(branch.id);
             const selected = index !== -1;
             const custom = customBranches.some((b) => b.id === branch.id);
+            const persona = getPersonaTheme(branch.id || branch.name);
             return (
               <article
                 key={branch.id}
                 className={`expert-card ${selected ? "selected" : ""}`}
+                style={{
+                  borderTop: `3px solid ${persona.border}`,
+                  backgroundColor: selected ? persona.tint : undefined,
+                }}
               >
                 <button
                   type="button"
@@ -273,7 +279,14 @@ const DebateSetup: React.FC<DebateSetupProps> = (props) => {
                   className="expert-select"
                 >
                   <span className="expert-card-top">
-                    <span className="expert-avatar">
+                    <span
+                      className="expert-avatar"
+                      style={{
+                        backgroundColor: persona.bg,
+                        color: persona.text,
+                        borderColor: persona.border,
+                      }}
+                    >
                       {branch.name.slice(0, 1)}
                     </span>
                     <span className="selection-mark">

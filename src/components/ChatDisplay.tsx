@@ -7,6 +7,7 @@ import {
 import type { DebateFrame } from "@/types/debate";
 import DebateFrameView from "./DebateFrameView";
 import { DEBATE_ROLES } from "@/lib/debateProtocol";
+import { getPersonaTheme } from "@/lib/personaTheme";
 import ChatMessage from "./ChatMessage";
 import {
   ChatMessageType,
@@ -115,27 +116,48 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
         </details>
       )}
       <div className="expert-rail">
-        {experts.map((expert, index) => (
-          <div
-            key={expert.id}
-            className={`rail-card ${isDebating && expert.id === currentBranchId ? "speaking" : ""}`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <strong>{expert.name}</strong>
-              <span className="helper">{index + 1}.</span>
+        {experts.map((expert, index) => {
+          const persona = getPersonaTheme(expert.id || expert.name);
+          const isSpeaking = isDebating && expert.id === currentBranchId;
+          return (
+            <div
+              key={expert.id}
+              className={`rail-card ${isSpeaking ? "speaking" : ""}`}
+              style={{
+                borderLeft: `4px solid ${isSpeaking ? "#EC7D55" : persona.border}`,
+              }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-[11px] font-bold"
+                    style={{
+                      backgroundColor: persona.bg,
+                      color: persona.text,
+                      borderColor: persona.border,
+                    }}
+                  >
+                    {expert.name.slice(0, 1)}
+                  </span>
+                  <strong className="truncate">{expert.name}</strong>
+                </div>
+                <span className="helper shrink-0">{index + 1}.</span>
+              </div>
+              <p className="helper mt-1">
+                {DEBATE_ROLES[branchRoles[expert.id] || "assumptions"].label}
+              </p>
+              {isSpeaking && (
+                <span className="mt-2 inline-flex items-center rounded-md bg-[#EC7D55] px-2 py-0.5 text-[10px] font-bold text-[#253341]">
+                  Şimdi konuşuyor
+                </span>
+              )}
             </div>
-            <p className="helper mt-1">
-              {DEBATE_ROLES[branchRoles[expert.id] || "assumptions"].label}
-            </p>
-            {isDebating && expert.id === currentBranchId && (
-              <span className="pill mt-2">Şimdi konuşuyor</span>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="surface debate-toolbar">
         <div>
-          <p className="text-sm font-medium">
+          <p className="text-sm font-medium text-[#253341]">
             {currentTurn >= totalTurns
               ? "Tüm konuşmalar tamamlandı"
               : `Tur ${context.roundNumber}/${roundsPerExpert} · ${STAGE_LABELS[context.stage]}`}
@@ -146,10 +168,10 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
             aria-valuemin={0}
             aria-valuemax={totalTurns}
             aria-valuenow={Math.min(currentTurn, totalTurns)}
-            className="mt-2 h-1.5 w-40 rounded-full bg-[#FFB6A6]/35"
+            className="mt-2 h-1.5 w-40 rounded-full bg-[#DBE6DD] border border-[#BCC7D2]"
           >
             <div
-              className="h-full rounded-full bg-[#9BCEC1]"
+              className="h-full rounded-full bg-[#EC7D55] transition-all duration-300"
               style={{
                 width: `${Math.min((currentTurn / (totalTurns || 1)) * 100, 100)}%`,
               }}
@@ -271,7 +293,7 @@ const ChatDisplay: React.FC<ChatDisplayProps> = ({
             />
           )}
         </div>
-        <p className="helper mt-5 pt-4 border-t border-[#5E3D38]/10">
+        <p className="helper mt-5 pt-4 border-t border-[#BCC7D2]">
           {isDebating
             ? "Yeni konuşmalar geldikçe akış güncellenir. Önceki mesajları okumak için yukarı kaydırabilirsin."
             : finalVerdict

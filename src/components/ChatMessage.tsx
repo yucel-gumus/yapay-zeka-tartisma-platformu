@@ -1,6 +1,7 @@
 import React from "react";
 import { DEBATE_ROLES } from "@/lib/debateProtocol";
 import { STAGE_LABELS } from "@/lib/debateSchedule";
+import { getPersonaTheme } from "@/lib/personaTheme";
 import JudgeReportView from "./JudgeReportView";
 import { ChatMessageType, JudgeReport } from "@/types/debate";
 import { JudgeIcon } from "./ui/Icons";
@@ -18,7 +19,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     return (
       <article className="judge-message">
         <div className="message-header">
-          <span className="message-avatar">
+          <span className="message-avatar bg-[#AB421C] text-[#F5F9F5] border-[#253341]">
             <JudgeIcon size={18} />
           </span>
           <strong>Hakem değerlendirmesi</strong>
@@ -33,13 +34,49 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const user = message.role === "user";
   const name =
     message.branchName || (user ? "Tartışmanın başlangıcı" : "Uzman");
+  const persona = !user
+    ? getPersonaTheme(message.branch || message.branchName)
+    : null;
   return (
-    <article className={`message ${user ? "user-message" : ""}`}>
+    <article
+      className={`message ${user ? "user-message" : "pl-4"}`}
+      style={
+        persona ? { borderLeft: `3px solid ${persona.border}` } : undefined
+      }
+    >
       <div className="message-header">
-        <span className="message-avatar">{user ? "?" : name.slice(0, 1)}</span>
+        <span
+          className="message-avatar"
+          style={
+            user
+              ? {
+                  backgroundColor: "#3E5164",
+                  color: "#F5F9F5",
+                  borderColor: "#253341",
+                }
+              : {
+                  backgroundColor: persona?.bg,
+                  color: persona?.text,
+                  borderColor: persona?.border,
+                }
+          }
+        >
+          {user ? "?" : name.slice(0, 1)}
+        </span>
         <strong>{name}</strong>
         {message.branchName && (
-          <span className="pill">
+          <span
+            className="pill"
+            style={
+              persona
+                ? {
+                    backgroundColor: persona.tint,
+                    borderColor: persona.border,
+                    color: "#253341",
+                  }
+                : undefined
+            }
+          >
             {message.debateRole
               ? DEBATE_ROLES[message.debateRole]?.label || "Uzman görüşü"
               : "Uzman görüşü"}
@@ -55,7 +92,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       <div className="message-content">
         {message.content}
         {isStreaming && (
-          <span className="animate-pulse" aria-hidden="true">
+          <span className="animate-pulse text-[#AB421C]" aria-hidden="true">
             {" "}
             ▍
           </span>

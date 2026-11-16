@@ -34,7 +34,7 @@ export default function DebateFrameEditor({
           Kavramların bu oturumdaki anlamı
         </p>
         {frame.definitions.map((definition, index) => (
-          <div key={index} className="space-y-2 rounded-xl bg-[#9BCEC1]/10 p-4">
+          <div key={index} className="space-y-2 rounded-xl bg-[#DBE6DD]/70 border border-[#BCC7D2] p-4">
             <label
               htmlFor={`frame-term-${index}`}
               className="block text-xs font-semibold"
@@ -173,7 +173,7 @@ export default function DebateFrameEditor({
           className="field"
         />
       </div>
-      <p className="text-xs text-[#5E3D38]">
+      <p className="text-xs text-[#3E5164]">
         Uzmanlar ve hakem onayladığın bu çerçeveyi kullanacak. Bir tanım,
         iddianın doğruluğuna ilişkin kanıt değildir.
       </p>

@@ -59,7 +59,7 @@ export default function Home() {
         {debateLogic.error && (
           <div
             role="alert"
-            className="rounded-2xl border border-[#FFB6A6] bg-white/50 p-4 text-[#2C1A18]"
+            className="rounded-2xl border border-[#AB421C] bg-[#F2A488]/30 p-4 text-[#253341] font-medium"
           >
             {debateLogic.error}
           </div>

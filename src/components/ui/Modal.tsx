@@ -71,7 +71,7 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[#2C1A18]/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+    <div className="fixed inset-0 bg-[#253341]/55 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
       <div
         ref={dialogRef}
         role="dialog"
@@ -79,26 +79,26 @@ export const Modal: React.FC<ModalProps> = ({
         aria-labelledby={title ? titleId : undefined}
         aria-label={title ? undefined : "İletişim kutusu"}
         tabIndex={-1}
-        className={`bg-[#FFEBD3] border border-[#FFB6A6]/50 rounded-2xl p-5 sm:p-7 ${maxWidthClass} w-full shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
+        className={`bg-[#EDF3EE] border border-[#BCC7D2] rounded-2xl p-5 sm:p-7 ${maxWidthClass} w-full shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
       >
         {title && (
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#FFB6A6]/40">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#BCC7D2]">
             <div className="flex items-center space-x-3">
               {icon && (
-                <div className="w-9 h-9 bg-[#9BCEC1] rounded-2xl flex items-center justify-center text-[#2C1A18] ">
+                <div className="w-9 h-9 bg-[#EC7D55] rounded-2xl flex items-center justify-center text-[#253341]">
                   {icon}
                 </div>
               )}
               <h3
                 id={titleId}
-                className="text-lg font-semibold text-[#2C1A18] tracking-tight"
+                className="text-lg font-semibold text-[#253341] tracking-tight"
               >
                 {title}
               </h3>
             </div>
             <button
               onClick={onClose}
-              className="text-[#5E3D38] hover:text-[#2C1A18] transition-colors w-9 h-9 flex items-center justify-center rounded-2xl hover:bg-[#FFB6A6]/40 cursor-pointer"
+              className="text-[#3E5164] hover:text-[#253341] transition-colors w-9 h-9 flex items-center justify-center rounded-2xl hover:bg-[#DBE6DD] cursor-pointer"
               aria-label="Kapat"
             >
               <CloseIcon size={20} />
