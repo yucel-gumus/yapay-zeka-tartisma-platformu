@@ -1,5 +1,8 @@
-import React, { useEffect, useId, useRef } from "react";
+"use client";
+
+import React, { useId, useRef } from "react";
 import { CloseIcon } from "./Icons";
+import { useModalDialog } from "@/lib/useModalDialog";
 
 interface ModalProps {
   isOpen: boolean;
@@ -18,69 +21,19 @@ export const Modal: React.FC<ModalProps> = ({
   maxWidthClass = "max-w-lg",
   children,
 }) => {
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const previous = document.activeElement as HTMLElement | null;
-    const dialog = dialogRef.current;
-    const focusable = () =>
-      Array.from(
-        dialog?.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), input, textarea, select, a[href], [tabindex="0"]',
-        ) || [],
-      );
-    (focusable()[0] || dialog)?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseRef.current();
-      }
-      if (event.key === "Tab") {
-        const elements = focusable();
-        const first = elements[0];
-        const last = elements[elements.length - 1];
-        if (!first) {
-          event.preventDefault();
-          dialog?.focus();
-        } else if (
-          event.shiftKey &&
-          (document.activeElement === first ||
-            document.activeElement === dialog)
-        ) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previous?.focus();
-    };
-  }, [isOpen]);
-  if (!isOpen) return null;
+  const closeDialog = useModalDialog(dialogRef, isOpen, onClose);
 
   return (
-    <div className="fixed inset-0 bg-[#253341]/55 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? titleId : undefined}
-        aria-label={title ? undefined : "İletişim kutusu"}
-        tabIndex={-1}
-        className={`bg-[#EDF3EE] border border-[#BCC7D2] rounded-2xl p-5 sm:p-7 ${maxWidthClass} w-full shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}
-      >
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={title ? titleId : undefined}
+      aria-label={title ? undefined : "İletişim kutusu"}
+      {...({ closedby: "any" } as Record<string, string>)}
+      className={`mwg-dialog m-auto w-[calc(100%-2rem)] ${maxWidthClass} rounded-2xl shadow-2xl`}
+    >
+      <div className="bg-[#EDF3EE] border border-[#BCC7D2] rounded-2xl p-5 sm:p-7 w-full overflow-hidden max-h-[90vh] flex flex-col">
         {title && (
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#BCC7D2]">
             <div className="flex items-center space-x-3">
@@ -97,7 +50,8 @@ export const Modal: React.FC<ModalProps> = ({
               </h3>
             </div>
             <button
-              onClick={onClose}
+              type="button"
+              onClick={closeDialog}
               className="text-[#3E5164] hover:text-[#253341] transition-colors w-9 h-9 flex items-center justify-center rounded-2xl hover:bg-[#DBE6DD] cursor-pointer"
               aria-label="Kapat"
             >
@@ -105,10 +59,10 @@ export const Modal: React.FC<ModalProps> = ({
             </button>
           </div>
         )}
-        <div className="overflow-y-auto flex-1 custom-scrollbar">
+        <div className="overflow-y-auto overscroll-contain flex-1 custom-scrollbar">
           {children}
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };
